@@ -63,15 +63,30 @@ table.kv td:first-child{color:var(--muted);width:38%;padding-right:10px}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .sound{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:6px}
 .sound b{display:block;margin-bottom:2px}
-.adj{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:var(--chip)}
-.adj-h{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}.adj-h span{color:var(--accent);font-size:13px;font-weight:600}
+.secs{margin-top:16px}
+details.sec{border-top:1px solid var(--line)}details.sec:last-child{border-bottom:1px solid var(--line)}
+details.sec>summary,details.adj>summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;user-select:none;-webkit-user-select:none}
+details.sec>summary::-webkit-details-marker,details.adj>summary::-webkit-details-marker{display:none}
+details.sec>summary::after,details.adj>summary::after{content:'';flex:none;margin-left:auto;margin-right:3px;width:7px;height:7px;border-right:1.6px solid var(--muted);border-bottom:1.6px solid var(--muted);transform:rotate(-45deg);transition:transform .15s}
+details.sec[open]>summary::after,details.adj[open]>summary::after{transform:rotate(45deg)}
+details.sec>summary{padding:13px 2px}
+details.sec>summary .t{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.sec>summary .h{flex:1;min-width:0;text-align:right;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+details.sec[open]>summary .h{visibility:hidden}
+details.sec>summary:hover .t,details.adj>summary:hover b{color:var(--accent)}
+details.sec>summary:focus-visible,details.adj>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+.sec-b{padding:0 0 18px}.sec-b>.group-label:first-child{margin-top:0}
+details.adj{border:1px solid var(--line);border-radius:12px;margin:8px 0;background:var(--chip)}
+details.adj>summary{padding:10px 14px}
+.adj-h{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.adj-h span{color:var(--accent);font-size:13px;font-weight:600}
+.adj-b{padding:0 14px 12px}
 .adj ol{margin:8px 0 0;padding-left:18px}.adj li{margin:3px 0}
 svg.dg{width:100%;height:auto;display:block;border-radius:8px;background:var(--panel);font:10.5px system-ui,sans-serif;fill:var(--ink)}
 .dg .wood{fill:#d9b26c}.dg .board{fill:#2a2624}.dg .guard{fill:#151517}.dg .pu{fill:#26262b;stroke:#4a4a52}.dg .metal{fill:#9aa0a6;stroke:#5b6066;stroke-width:.6}
 .dg .saddle{fill:#2c2c30;stroke:#55555c}.dg .nut{fill:#efe9dc;stroke:#b5ab96}.dg .screw{fill:#3a3a40;stroke:#8e9297;stroke-width:.8}.dg .skin{fill:#e8b89a}
 .dg .str{stroke:#bfc3c7;stroke-width:1.8;fill:none}.dg .spring{stroke:#8e9297;stroke-width:1.6;fill:none}.dg .cavity{fill:#111;opacity:.85}
 .dg .acc{stroke:var(--accent);fill:var(--accent);stroke-width:1.6}.dg text.acc{stroke:none;font-weight:700}.dg text.dim{fill:var(--muted)}.dg line.acc{fill:none}
-.order{display:grid;gap:6px}.order button{text-align:left;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:10px;padding:8px 12px;font:inherit;cursor:pointer}.order button:hover{border-color:var(--accent)}
+.order{display:grid;gap:6px}.order button b{display:block;font-weight:600}.order button span{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}.order button{text-align:left;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:10px;padding:8px 12px;font:inherit;cursor:pointer}.order button:hover{border-color:var(--accent)}
 .back{background:none;border:0;color:var(--accent);cursor:pointer;padding:0;font:inherit;margin-bottom:10px}
 .foot{color:var(--muted);font-size:12px;margin-top:26px;border-top:1px solid var(--line);padding-top:12px}
 .foot a{color:inherit}
@@ -524,13 +539,21 @@ const ADJ={
    `<rect class="metal" x="250" y="30" width="18" height="90" rx="3"/>`+[0,1,2].map(i=>`<ellipse class="str" cx="259" cy="${62+i*12}" rx="12" ry="4"/>`).join('')+
    DG.t(150,34,'tune up',' class="acc"')+DG.t(142,100,'leaves on the inside')+DG.t(142,112,'toward the centre')+DG.t(22,146,'from the nut',' class="dim"')+DG.t(224,22,'side view',' class="dim"')+DG.t(228,136,'wraps go down',' class="dim"')+DG.close},
 };
-const SETUP_ORDER=[['strings','1 · New strings and tuning'],['neck','2 · Neck relief'],['bridge','3 · Action at fret 12'],['nut','4 · Nut slot height'],['neckpu','5 · Pickup height'],['bridge','6 · Intonation'],['bridge','7 · Tremolo float']];
-function adjHTML(keys){return keys.map(k=>{const a=ADJ[k];return `<div class="adj"><div class="adj-h"><b>${esc(a.title)}</b><span>${esc(a.value)}</span></div>${a.svg()}<ol>${a.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div>`;}).join('');}
+const SETUP_ORDER=[['strings','1 · New strings and tuning','wind','E standard, A = 440 Hz'],['neck','2 · Neck relief','relief'],['bridge','3 · Action at fret 12','action'],['nut','4 · Nut slot height','nut'],['neckpu','5 · Pickup height','pu_sc','Single coils 2.4 / 2.0 mm · humbucker 1.6 mm'],['bridge','6 · Intonation','intonation'],['bridge','7 · Tremolo float','float']];
+function adjHTML(keys){return keys.map(k=>{const a=ADJ[k];return `<details class="adj" data-adj="${k}"${isOpen('adj.'+k,false)?' open':''}><summary><span class="adj-h"><b>${esc(a.title)}</b><span>${esc(a.value)}</span></span></summary><div class="adj-b">${a.svg()}<ol>${a.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div></details>`;}).join('');}
 
 /* ---------- panel ---------- */
 const panel=document.getElementById('panel');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const tag=k=>k?`<span class="tag ${k}">${S[k]}</span>`:'';
+/* collapsible sections: <details> with a one-line summary; open/closed is remembered per section id in this browser */
+const OPEN=(()=>{try{return JSON.parse(localStorage.getItem('sixmart.open')||'{}')||{};}catch(e){return {};}})();
+const isOpen=(id,def)=>id in OPEN?!!OPEN[id]:def;
+function sec(id,title,hint,body,def=true){return `<details class="sec" data-sec="${id}"${isOpen(id,def)?' open':''}><summary><span class="t">${esc(title)}</span>${hint?`<span class="h">${esc(hint)}</span>`:''}</summary><div class="sec-b">${body}</div></details>`;}
+const soundHint=()=>ST.pulled?`On · ${MODENAME[ST.mode]} · ${SELNAME[ST.sel]}`:`Effects off · ${SELNAME[ST.sel]}`;
+const TUNE_HINT='E A D G B E · A = 440 Hz';
+const tuningRows=()=>rows(TUNING.map(([a,b])=>[a,b,'ref']));
+function openAdj(k){const d=panel.querySelector(`details.adj[data-adj="${k}"]`);if(!d)return;const s=d.closest('details.sec');if(s)s.open=true;d.open=true;requestAnimationFrame(()=>d.scrollIntoView({block:'start',behavior:'smooth'}));}
 function rows(list){return `<table class="kv">${list.map(([k,v,src,n])=>`<tr><td>${esc(k)}</td><td>${esc(v)}${tag(src)}${n?`<span class="note">${esc(n)}</span>`:''}</td></tr>`).join('')}</table>`;}
 function slider(id,lab,val,max=10){return `<div class="ctl"><label for="${id}">${lab}<span id="${id}V">${val}</span></label><input type="range" id="${id}" min="0" max="${max}" step="0.5" value="${val}"></div>`;}
 function ctlHTML(kind){
@@ -545,26 +568,27 @@ function foot(){return `<div class="foot"><div class="legend">${tag('spec')} ret
 function renderOverview(){
  const byG=GROUPS.map(g=>`<div class="group-label">${g}</div><div class="chips">${Object.entries(PARTS).filter(([,p])=>p.group===g).map(([k,p])=>`<button class="chip" data-go="${k}">${esc(p.name)}</button>`).join('')}</div>`).join('');
  panel.innerHTML=`<h1>Tagima Sixmart</h1><p class="sub">HSS Strat style with built-in effects · Sparkling Candy Apple</p>
- ${presetHTML()}
- <h2>Current sound</h2><div class="sound" id="sound">${soundText()}</div>
- <h2>Parts</h2>${byG}
- <h2>Presets · API</h2><p class="sub">A link or a script can set every control and show the steps. Try one:</p>
- <div class="chips">${Object.entries(EXAMPLES).map(([k,e])=>`<button class="chip" data-example="${k}">${esc(e.title)}</button>`).join('')}</div>
- <div class="chips" style="margin-top:8px"><button class="chip" data-api>API reference for agents →</button></div>
- <h2>Specs</h2>${rows([['Body','Basswood','spec'],['Neck','Maple, C shape','spec'],['Fretboard','Techwood, 22 frets, 9.5" radius','spec'],['Scale','25.5" (648 mm)','spec'],['Nut','43 mm','spec'],['Pickups','Humbucker + 2 single coils (HSS)','spec'],['Bridge','Tremolo','spec'],['Tuners','Diecast','spec'],['Effects','Overdrive, distortion, delay, reverb','spec'],['Outputs','6.35 mm, headphones, rec out / audio in','photo']])}
- <h2>Setup order</h2><div class="order">${SETUP_ORDER.map(([k,l])=>`<button data-go="${k}">${l}</button>`).join('')}</div>
- <h2>Quick setup reference</h2>${rows([['Tuning','E standard, A = 440 Hz','ref'],['Neck relief','0.25 mm at fret 8','ref'],['Action (fret 12)','1.6 mm treble / 1.8–2.0 mm bass','ref'],['Pickup height','SC 2.4 / 2.0 mm · HB 1.6 mm','ref']])}${foot()}`;}
+ ${presetHTML()}<div class="secs">
+ ${sec('ov.fx','Effects & sound',soundHint(),`<div class="sound" id="sound">${soundText()}</div>
+  <div class="group-label">Example presets</div><div class="chips">${Object.entries(EXAMPLES).map(([k,e])=>`<button class="chip" data-example="${k}">${esc(e.title)}</button>`).join('')}</div>
+  <p class="sub" style="margin:12px 0 6px">A link or a script can set every control and show the steps.</p><div class="chips"><button class="chip" data-api>API reference for agents →</button></div>`,true)}
+ ${sec('ov.tuning','Tuning',TUNE_HINT,tuningRows()+`<div class="chips" style="margin-top:10px"><button class="chip" data-go="strings" data-open-adj="wind">Strings &amp; winding →</button></div>`,false)}
+ ${sec('ov.setup','Setup','Relief · action · nut · pickups · intonation · float',`<p class="sub">Do the steps in this order. Each step opens its diagram. Values are general Strat-style references ${tag('ref')}.</p><div class="order">${SETUP_ORDER.map(([k,l,a,v])=>`<button data-go="${k}" data-open-adj="${a}"><b>${l}</b><span>${esc(v||ADJ[a].value)}</span></button>`).join('')}</div>`,false)}
+ ${sec('ov.parts','Parts',`${Object.keys(PARTS).length} parts · click to zoom`,byG,true)}
+ ${sec('ov.specs','Specs','Basswood · maple · 25.5" · 22 frets · HSS',rows([['Body','Basswood','spec'],['Neck','Maple, C shape','spec'],['Fretboard','Techwood, 22 frets, 9.5" radius','spec'],['Scale','25.5" (648 mm)','spec'],['Nut','43 mm','spec'],['Pickups','Humbucker + 2 single coils (HSS)','spec'],['Bridge','Tremolo','spec'],['Tuners','Diecast','spec'],['Effects','Overdrive, distortion, delay, reverb','spec'],['Outputs','6.35 mm, headphones, rec out / audio in','photo']]),false)}
+ </div>${foot()}`;}
 function renderPart(key){
  const p=PARTS[key];
  panel.innerHTML=`<button class="back" data-home>← Whole guitar</button>${PRESET?`<button class="back" data-preset-home style="margin-left:14px">▲ Preset: ${esc(PRESET.title||'untitled')}</button>`:''}<h1>${esc(p.name)}</h1><p class="sub">${p.group}</p><p class="what">${esc(p.what)}</p>
- ${p.ctl?`<h2>Setting</h2>${ctlHTML(p.ctl)}<div class="sound" id="sound">${soundText()}</div>`:''}
- ${p.specs.length?`<h2>Specs</h2>${rows(p.specs)}`:''}
- ${p.adjust?`<h2>Adjustments</h2>${adjHTML(p.adjust)}`:''}
- ${p.setup.length?`<h2>Setup notes</h2>${rows(p.setup)}`:''}
- ${p.tuning?`<h2>Standard tuning</h2>${rows(TUNING.map(([a,b])=>[a,b,'ref']))}`:''}
- ${foot()}`;}
+ <div class="secs">
+ ${p.ctl?sec('part.setting','Setting',soundHint(),`${ctlHTML(p.ctl)}<div class="sound" id="sound">${soundText()}</div>`,true):''}
+ ${p.adjust?sec('part.adjust','Adjustments',p.adjust.map(k=>ADJ[k].title).join(' · '),adjHTML(p.adjust),true):''}
+ ${p.tuning?sec('part.tuning','Standard tuning',TUNE_HINT,tuningRows(),true):''}
+ ${p.setup.length?sec('part.notes','Setup notes',p.setup.map(r=>r[0]).join(' · '),rows(p.setup),true):''}
+ ${p.specs.length?sec('part.specs','Specs',p.specs.map(r=>r[1]).join(' · '),rows(p.specs),true):''}
+ </div>${foot()}`;}
 panel.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
- if(b.dataset.go){select(b.dataset.go);return;}
+ if(b.dataset.go){select(b.dataset.go);if(b.dataset.openAdj)openAdj(b.dataset.openAdj);return;}
  if('home' in b.dataset){home();return;}
  if('presetHome' in b.dataset){home();return;}
  if('presetClear' in b.dataset){clearPreset();return;}
@@ -578,6 +602,7 @@ panel.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)retu
  else if(b.dataset.mode){ST.mode=b.dataset.mode;}
  else return;
  save();applyState();renderPart(current);});
+panel.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.dataset)return;const id=d.dataset.sec||(d.dataset.adj?'adj.'+d.dataset.adj:'');if(!id)return;OPEN[id]=d.open?1:0;try{localStorage.setItem('sixmart.open',JSON.stringify(OPEN));}catch(err){}},true);
 panel.addEventListener('input',e=>{const t=e.target;
  const map={cVol:'vol',cTone:'tone',cDelay:'delay',cRev:'reverb'}; if(!map[t.id])return;
  ST[map[t.id]]=+t.value; document.getElementById(t.id+'V').textContent=t.value; save(); applyState();
@@ -738,13 +763,13 @@ function showApi(){
  current=null;document.getElementById('selBox').setAttribute('visibility','hidden');
  const ex=EXAMPLES['ambient-clean'],{set,meta}=normalize(ex),link=baseURL()+'#'+paramsFor(set,{...ST,...set},meta);
  const table=rows(Object.entries(SCHEMA).map(([k,d])=>[k+(d.aliases.length?` (${d.aliases.join(', ')})`:''),`${d.values} — ${d.control}`]));
- panel.innerHTML=`<button class="back" data-home>← Whole guitar</button><h1>Preset API</h1><p class="sub">For an agent or a script that wants to show a setting of the built-in effects on this page</p><div class="api">
- <h2>1 · Build a link</h2><p>Put the controls in the hash of this page as <code>key=value</code> pairs. A <code>?query</code> works too. Open the link: the page sets the knobs, draws numbered callouts next to the real controls and lists the steps.</p>
+ panel.innerHTML=`<button class="back" data-home>← Whole guitar</button><h1>Preset API</h1><p class="sub">For an agent or a script that wants to show a setting of the built-in effects on this page</p><div class="api secs">
+ ${sec('api.link','1 · Build a link','#key=value links',`<p>Put the controls in the hash of this page as <code>key=value</code> pairs. A <code>?query</code> works too. Open the link: the page sets the knobs, draws numbered callouts next to the real controls and lists the steps.</p>
  <pre>${esc(link)}</pre><p><a href="${esc(link)}">Open this example</a></p>
- <p>Give all seven controls for a complete preset. A control you leave out keeps its current setting and gets no step. The preset card reports unknown keys and bad values. They do not stop the other controls.</p>
- <h2>2 · Parameters</h2>${table}
- <h2>3 · What the user sees</h2><p>Numbered callouts on the drawing (one per control, in the order to do them), the same steps in the panel with the pointer position as a clock time, the knobs turned to the values, and a link to share. Each step zooms to its control on click.</p>
- <h2>4 · JavaScript</h2><p>With the page open (for example from a browser tool), use <code>window.sixmart</code>:</p>
+ <p>Give all seven controls for a complete preset. A control you leave out keeps its current setting and gets no step. The preset card reports unknown keys and bad values. They do not stop the other controls.</p>`)}
+ ${sec('api.params','2 · Parameters',ORDER.join(' · '),table)}
+ ${sec('api.sees','3 · What the user sees','callouts · steps · link',`<p>Numbered callouts on the drawing (one per control, in the order to do them), the same steps in the panel with the pointer position as a clock time, the knobs turned to the values, and a link to share. Each step zooms to its control on click.</p>`)}
+ ${sec('api.js','4 · JavaScript','window.sixmart · postMessage',`<p>With the page open (for example from a browser tool), use <code>window.sixmart</code>:</p>
  <pre>sixmart.apply({pickup:5, effects:'on', mode:'clean', volume:8, tone:7, delay:4, reverb:7, title:'Ambient clean'})
 // → {ok, config, warnings, steps:[...text], link}
 sixmart.steps({volume:8, delay:4})   // text of the steps, no UI change
@@ -752,14 +777,14 @@ sixmart.link({...})                 // shareable URL
 sixmart.get()                       // current setting as a config
 sixmart.clear()                     // remove the preset
 sixmart.schema · sixmart.examples</pre>
- <p>From another window or an iframe: <code>postMessage({type:'sixmart:apply', config:{...}}, '*')</code>; the page answers with <code>{type:'sixmart:state', ok, config, steps, link}</code>. <code>sixmart:get</code> returns the current state.</p>
- <h2>5 · How to write a preset (for agents)</h2><ol>
+ <p>From another window or an iframe: <code>postMessage({type:'sixmart:apply', config:{...}}, '*')</code>; the page answers with <code>{type:'sixmart:state', ok, config, steps, link}</code>. <code>sixmart:get</code> returns the current state.</p>`)}
+ ${sec('api.write','5 · How to write a preset','for agents',`<ol>
  <li>Ask what sound or song the player wants, and whether the player uses an amp or headphones.</li>
  <li>Choose the pickup: 1 (bridge humbucker) for drive and bite, 3 or 5 for warm cleans, 2 and 4 for the hollow in-between sounds.</li>
  <li>Set <code>effects</code>. Use <code>off</code> for the plain guitar. Use <code>on</code> for the drive modes, delay and reverb. With effects on, pick the <code>mode</code>: <code>clean</code>, <code>over</code> (overdrive) or <code>dist</code> (distortion).</li>
  <li>Give <code>volume</code>, <code>tone</code>, <code>delay</code> and <code>reverb</code> from 0 to 10. Start near 7 / 7 / 3 / 4 and move from there. The levels are not calibrated. Say in the note what to listen for.</li>
  <li>Add a short <code>title</code> and a <code>note</code>. Send the link. Also paste the step text (from <code>sixmart.steps</code> or the panel), so the player has it without the page.</li></ol>
- <p>Source of the control facts: the printed plate and the owner's photos. The effects need a battery. The guitar's manual was not checked.</p></div>${foot()}`;
+ <p>Source of the control facts: the printed plate and the owner's photos. The effects need a battery. The guitar's manual was not checked.</p>`)}</div>${foot()}`;
  document.getElementById('crumbTitle').textContent='Preset API';try{history.replaceState(null,'','#api');}catch(e){}panel.scrollTop=0;
 }
 function configFromURL(){
