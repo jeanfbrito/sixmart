@@ -27,6 +27,9 @@ headstock logo. Without a network, the logo uses a system script font.
 | `index.html` | The whole page: CSS, SVG construction, data and interaction |
 | `API.md` | The preset and riff API and the saved-preset file format, for agents and scripts |
 | `AGENTS.md` | This file |
+| `README.md` | The project page on GitHub, with screenshots and live links |
+| `tools/shots.mjs` | Makes the README images in `docs/img` with headless Chrome |
+| `docs/img/` | The README images. Do not edit them by hand |
 
 ## Run and check
 
@@ -66,6 +69,12 @@ sed 's#<head>#<head><script>window.onerror=(m,s,l,c)=>{document.title="ERR "+m+"
 - Downloads (Export JSON) need the Chrome DevTools protocol. Start Chrome
   with `--remote-debugging-port`, send `Browser.setDownloadBehavior` with a
   download folder, click the button, then read the file.
+- README images: after a change that a README image shows, run
+  `node tools/shots.mjs` (all images) or `node tools/shots.mjs <name>`.
+  Each entry in `SHOTS` sets the window size, theme, rotation, open
+  sections and stored data, so a run gives the same images. Look at each
+  new image before you commit it. A README fact (a count, a value, a riff
+  title) comes from the page data. Check it there after a change.
 
 ## Page structure
 
