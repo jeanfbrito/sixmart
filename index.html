@@ -342,7 +342,8 @@ jack('phones',PJ.x,PJ.y);
  el('circle',{cx:JX,cy:JY,r:6.2,fill:'url(#chrome)',stroke:'#333','stroke-width':.4},g);
  el('circle',{cx:JX,cy:JY,r:3.6,fill:'#050505'},g);
  screw(g,JX-26*Math.cos(.61),JY-26*Math.sin(.61),1.6,'#111'); screw(g,JX+26*Math.cos(.61),JY+26*Math.sin(.61),1.6,'#111');}
-{const g=part('strap'); [[213,671],[304,1272]].forEach(([x,y])=>{el('circle',{cx:x,cy:y,r:5,fill:'#0d0d0e',stroke:'#333','stroke-width':.6},g);el('circle',{cx:x,cy:y,r:2.6,fill:'#26262a'},g);});}
+{const g=part('strap'); // photo: upper button on the tip of the bass-side horn, end pin on the bottom edge; [head x,y, base x,y]
+ [[165,669,160,675],[305,1263,305,1257]].forEach(([x,y,bx,by])=>{el('circle',{cx:bx,cy:by,r:3.4,fill:'#1a1a1c'},g);el('circle',{cx:x,cy:y,r:5,fill:'#0d0d0e',stroke:'#4a4a52','stroke-width':1},g);el('circle',{cx:x,cy:y,r:2.6,fill:'#26262a'},g);el('circle',{cx:x-1.4,cy:y-1.4,r:.9,fill:'#fff',opacity:.18},g);});}
 
 /* ---------- bridge ---------- */
 {const g=part('bridge');
@@ -356,10 +357,16 @@ jack('phones',PJ.x,PJ.y);
    el('circle',{cx:x,cy:1099.5,r:1.4,fill:'#2a2a2e',stroke:'#4a4a50','stroke-width':.35},g);el('line',{x1:x-.8,y1:1099.5,x2:x+.8,y2:1099.5,stroke:'#111','stroke-width':.4},g);}
  parts.saddleOff=off;}
 {const g=part('arm');
- el('path',{d:'M352 1070C364 1062 357 1030 354 990C352 950 352 915 352 882',fill:'none',stroke:'#000','stroke-opacity':.4,'stroke-width':4.2,'stroke-linecap':'round',transform:'translate(1 1.5)'},g);
- el('path',{d:'M352 1070C364 1062 357 1030 354 990C352 950 352 915 352 882',fill:'none',stroke:'#151517','stroke-width':2.8,'stroke-linecap':'round'},g);
- el('path',{d:'M352 1070C364 1062 357 1030 354 990C352 950 352 915 352 882',fill:'none',stroke:'#6a6a70','stroke-width':.7,'stroke-linecap':'round',transform:'translate(-.6 0)'},g);
- el('circle',{cx:352,cy:878,r:3.6,fill:'#141416',stroke:'#3a3a3e','stroke-width':.5},g);el('circle',{cx:351,cy:877,r:1.2,fill:'#fff',opacity:.25},g);}
+ // arm hangs from the bridge socket over the lower body, as on the owner's photos: 5 mm black rod, thicker plastic tip
+ const A='M352 1068C354 1140 356 1200 365 1248C370 1276 377 1296 383 1312';
+ el('path',{d:A,fill:'none',stroke:'#000','stroke-opacity':.45,'stroke-width':7,'stroke-linecap':'round',transform:'translate(1.5 2.5)'},g);
+ el('path',{d:A,fill:'none',stroke:'#3c3c42','stroke-width':6.6,'stroke-linecap':'round'},g);
+ el('path',{d:A,fill:'none',stroke:'#141416','stroke-width':5.4,'stroke-linecap':'round'},g);
+ el('path',{d:'M371 1272C376 1290 380 1302 383 1312',fill:'none',stroke:'#3c3c42','stroke-width':9.2,'stroke-linecap':'round'},g);
+ el('path',{d:'M371 1272C376 1290 380 1302 383 1312',fill:'none',stroke:'#0f0f11','stroke-width':8,'stroke-linecap':'round'},g);
+ el('path',{d:A,fill:'none',stroke:'#5a5a62','stroke-width':.9,'stroke-linecap':'round',transform:'translate(-1.5 0)'},g);
+ el('path',{d:'M372 1278C376 1291 379 1301 382 1309',fill:'none',stroke:'#3a3a40','stroke-width':1.3,'stroke-linecap':'round',transform:'translate(-2 0)'},g);
+ el('circle',{cx:352,cy:1068,r:4.4,fill:'#0b0b0c',stroke:'#2e2e32','stroke-width':.6},g);el('circle',{cx:352,cy:1068,r:2.6,fill:'#141416'},g);}
 
 /* ---------- strings ---------- */
 {const g=part('strings');
@@ -391,7 +398,7 @@ const PARTS={
  pickguard:{name:'Pickguard',group:'Body',what:'Black pickguard with a white edge line. It holds the pickups, the selector and the controls.',specs:[['Color','Black','spec'],['Size','218 × 273 mm','photo'],['Edge','White ply line','photo']],setup:[]},
  neckpu:{name:'Neck pickup',group:'Pickups',what:'Single coil next to the neck. Warm and round sound.',specs:[['Type','Single coil','spec'],['Selector','Position 5','inferred']],setup:[],adjust:['pu_sc']},
  midpu:{name:'Middle pickup',group:'Pickups',what:'Single coil in the middle. Thin and clear alone, "quacky" in combinations.',specs:[['Type','Single coil','spec'],['Selector','Position 3','inferred']],setup:[],adjust:['pu_sc']},
- arm:{name:'Tremolo arm',group:'Hardware',what:'Screw-in arm. Press it toward the body to lower the pitch. Thread it in until it swings with light friction.',specs:[['Type','Screw-in, black','photo'],['Tension','Turn in until it holds its position','ref']],setup:[]},
+ arm:{name:'Tremolo arm',group:'Hardware',what:'Screw-in arm. It hangs from the bridge socket when it is not in use. Press it toward the body to lower the pitch. Thread it in until it swings with light friction.',specs:[['Type','Screw-in, black','photo'],['Tension','Turn in until it holds its position','ref']],setup:[]},
  bridgepu:{name:'Bridge humbucker',group:'Pickups',what:'Double coil next to the bridge. The most output and the least hum. Best for overdrive and distortion.',specs:[['Type','Humbucker','spec'],['Selector','Position 1','inferred']],setup:[],adjust:['pu_hb']},
  selector:{name:'Pickup selector',group:'Electronics',what:'5-way lever that selects which pickups play.',specs:[['Positions','5','spec'],['1 (toward bridge)','Bridge humbucker','inferred'],['2','Bridge + middle (wiring varies, often coil split)','inferred'],['3','Middle','inferred'],['4','Middle + neck','inferred'],['5 (toward neck)','Neck','inferred']],setup:[],ctl:'selector'},
  volume:{name:'Volume · push-pull',group:'Electronics',what:'Master volume. Pull the knob up to turn the built-in effects on. Push it down for a plain guitar signal.',specs:[['Label','"PUSH PULL / EFFECTS ON / VOLUME"','photo']],setup:[],ctl:'volume'},
