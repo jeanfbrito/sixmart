@@ -45,6 +45,9 @@ delay, reverb. That is the order a player does them.
 - The knobs turned to the values, the toggle in its row, the LED on or off.
 - A "Copy link" button, so the setting can be shared again.
 - A click on a step zooms to that control and pulses its ring.
+- If the player then moves a control by hand, the steps and the callouts
+  follow it, and the card shows "edited". **Save** keeps the result as a
+  saved preset (section 6).
 
 ## 4 · JavaScript
 
@@ -59,7 +62,12 @@ sixmart.steps({volume:8, delay:4})   // text of the steps, no UI change
 sixmart.link({...})                  // shareable URL for a config
 sixmart.get()                        // current setting as a config object
 sixmart.clear()                      // remove the preset card and callouts
+sixmart.save({...config, title})     // add to the player's saved presets → {ok, stored, count, warnings}
+sixmart.saved()                      // the saved presets, as an array of configs
+sixmart.importPresets(data)          // same as Import JSON → {added, updated, skipped, stored}
+sixmart.exportPresets()              // the Export JSON content, as an object
 sixmart.schema                       // the parameter table above, as data
+sixmart.order                        // the step order
 sixmart.examples                     // four example presets
 ```
 
@@ -92,3 +100,22 @@ holds no secrets.
 
 Source of the control facts: the printed plate and the owner's photos. The
 effects need a battery. The guitar's manual was not checked.
+
+## 6 · Saved presets and files
+
+The player can set the controls by hand in **Effects & sound** and save the
+setting with a name. **Export JSON** and **Import JSON** are in **Presets**.
+The saved list stays in this browser only. The export file is the way to
+move it or keep a copy.
+
+```json
+{"format":"sixmart-presets","version":1,"presets":[
+ {"title":"Ambient clean","note":"Neck pickup with room for arpeggios","pickup":5,"effects":"on","mode":"clean","volume":8,"tone":7,"delay":4,"reverb":7}]}
+```
+
+- Import also accepts a plain array of configs, or one config object.
+- Each config uses the keys of section 2.
+- A preset with the same title replaces the old one.
+- Import skips an item that sets no control, and reads at most 200 items
+  from a file of at most 1 MB.
+- An agent can write this file for the player to import.
