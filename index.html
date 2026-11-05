@@ -63,7 +63,6 @@ table.kv td:first-child{color:var(--muted);width:38%;padding-right:10px}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .sound{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:6px}
 .sound b{display:block;margin-bottom:2px}
-textarea{width:100%;min-height:80px;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:10px;padding:10px;font:inherit;resize:vertical}
 .adj{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:var(--chip)}
 .adj-h{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}.adj-h span{color:var(--accent);font-size:13px;font-weight:600}
 .adj ol{margin:8px 0 0;padding-left:18px}.adj li{margin:3px 0}
@@ -522,8 +521,6 @@ function ctlHTML(kind){
  if(kind==='tone') return slider('cTone','Tone',ST.tone);
  if(kind==='dr') return slider('cDelay','Delay (lower ring)',ST.delay)+slider('cRev','Reverb (top cap)',ST.reverb);
  return '';}
-function notesHTML(key){let v='';try{v=localStorage.getItem('sixmart.notes.'+key)||'';}catch(e){}
- return `<h2>My notes</h2><textarea id="notes" data-key="${key}" placeholder="Your measurements, string brand, last setup date…">${esc(v)}</textarea>`;}
 function foot(){return `<div class="foot"><div class="legend">${tag('spec')} retailer spec sheet ${tag('photo')} seen on your photos ${tag('ref')} common Strat-style setup value ${tag('inferred')} worked out, not confirmed</div><p>Specs: <a href="${SPEC_URL}" target="_blank" rel="noopener">AVL Gear listing</a>. Setup values are general references for a 25.5", 9.5"-radius guitar, not Tagima factory numbers. Measure your own guitar.</p></div>`;}
 
 function renderOverview(){
@@ -542,7 +539,7 @@ function renderPart(key){
  ${p.adjust?`<h2>Adjustments</h2>${adjHTML(p.adjust)}`:''}
  ${p.setup.length?`<h2>Setup notes</h2>${rows(p.setup)}`:''}
  ${p.tuning?`<h2>Standard tuning</h2>${rows(TUNING.map(([a,b])=>[a,b,'ref']))}`:''}
- ${notesHTML(key)}${foot()}`;}
+ ${foot()}`;}
 panel.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
  if(b.dataset.go){select(b.dataset.go);return;}
  if('home' in b.dataset){home();return;}
@@ -552,7 +549,6 @@ panel.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)retu
  else return;
  save();applyState();renderPart(current);});
 panel.addEventListener('input',e=>{const t=e.target;
- if(t.id==='notes'){try{localStorage.setItem('sixmart.notes.'+t.dataset.key,t.value);}catch(err){}return;}
  const map={cVol:'vol',cTone:'tone',cDelay:'delay',cRev:'reverb'}; if(!map[t.id])return;
  ST[map[t.id]]=+t.value; document.getElementById(t.id+'V').textContent=t.value; save(); applyState();
  const s=document.getElementById('sound'); if(s) s.innerHTML=soundText();});
@@ -603,7 +599,7 @@ document.getElementById('home').onclick=home;
 document.getElementById('fit').onclick=()=>animateTo(boxView(full(),20));
 document.getElementById('zin').onclick=()=>{const c={x:vb.x+vb.w/2,y:vb.y+vb.h/2};const t={...vb};const f=.6;animateTo({x:c.x-(c.x-t.x)*f,y:c.y-(c.y-t.y)*f,w:t.w*f,h:t.h*f},260);};
 document.getElementById('zout').onclick=()=>{const c={x:vb.x+vb.w/2,y:vb.y+vb.h/2};const f=1/.6;animateTo({x:c.x-(c.x-vb.x)*f,y:c.y-(c.y-vb.y)*f,w:vb.w*f,h:vb.h*f},260);};
-addEventListener('keydown',e=>{if(e.key==='Escape')home();if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;if(e.key==='+'||e.key==='=')document.getElementById('zin').click();if(e.key==='-')document.getElementById('zout').click();});
+addEventListener('keydown',e=>{if(e.key==='Escape')home();if(e.target.tagName==='INPUT')return;if(e.key==='+'||e.key==='=')document.getElementById('zin').click();if(e.key==='-')document.getElementById('zout').click();});
 new ResizeObserver(()=>{const c={x:vb.x+vb.w/2,y:vb.y+vb.h/2};const a=aspect();let w=vb.w,h=vb.h;if(w/h<a)w=h*a;else h=w/a;
  // keep the zoom level: base on the dimension that was fitting
  setVB({x:c.x-w/2,y:c.y-h/2,w,h});}).observe(stage);
