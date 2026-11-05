@@ -47,9 +47,13 @@ sed 's#<head>#<head><script>window.onerror=(m,s,l,c)=>{document.title="ERR "+m+"
   script partway. The panel is then empty.
 - Prove a visual change with a screenshot. Check both themes: in a copy, add
   `data-theme="light"` or `data-theme="dark"` to `<html>`.
-- Phone width: use `--window-size=390,844`. The panel clips horizontal
-  overflow, so the page width does not show a row that is too wide. Measure
-  the element rectangles.
+- Phone width: `--window-size=390,844` is not enough. Headless Chrome keeps
+  the viewport at least 500 px wide. It crops the screenshot to 390 px, so
+  the right side of the panel looks cut. Use the Chrome DevTools protocol:
+  send `Emulation.setDeviceMetricsOverride` with width 390, then check
+  that `innerWidth` is 390. The panel clips horizontal overflow, so the
+  page width does not show a row that is too wide. Measure the element
+  rectangles.
 - Interaction: in a copy, put a test script before the last `</script>`.
   The script drives the real buttons and inputs (`click()`, or set `value`
   and dispatch `input`), collects the results and writes them to
