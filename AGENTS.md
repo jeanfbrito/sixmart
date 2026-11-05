@@ -14,6 +14,8 @@ guitar in SVG at real scale. With it, the reader can do these tasks:
   Export or import the saved settings as a JSON file.
 - Open a preset that an agent or a script made. The page sets the knobs,
   draws numbered callouts next to the controls and lists the steps.
+- Learn a riff. A link, a script or a pasted tab puts a dot on each fret
+  that the riff uses. The page draws the tab and steps through the notes.
 
 The page has no build step, no server and no JavaScript dependency. The only
 external resource is the Yellowtail web font from Google Fonts, for the
@@ -22,7 +24,7 @@ headstock logo. Without a network, the logo uses a system script font.
 | File | Content |
 | --- | --- |
 | `index.html` | The whole page: CSS, SVG construction, data and interaction |
-| `API.md` | The preset API and the saved-preset file format, for agents and scripts |
+| `API.md` | The preset and riff API and the saved-preset file format, for agents and scripts |
 | `AGENTS.md` | This file |
 
 ## Run and check
@@ -124,8 +126,9 @@ JavaScript builds the SVG at load time. Named sections divide the script
 - **panel.** `renderOverview()`, `renderPart(key)` and `showApi()` write the
   side panel. Each section is a `<details>` that `sec(id, title, hint, body,
   openByDefault)` makes. The hint is the one-line summary that a closed
-  section shows. The overview order is Tuning, Setup, Effects & sound,
-  Presets, Parts, Specs. When a preset is active, its card is above them. A
+  section shows. The overview order is Tuning, Riffs, Setup, Effects &
+  sound, Presets, Parts, Specs. An active riff card and an active preset
+  card are above them, in that order. A
   part panel has Setting, Adjustments, Standard tuning, Setup notes and
   Specs. Each adjustment is its own card,
   `<details class="adj" data-adj="<key>">`. A capture-phase `toggle`
@@ -137,7 +140,9 @@ JavaScript builds the SVG at load time. Named sections divide the script
   `boxView`). Selecting a part zooms to its `getBBox()` and sets the hash to
   its key. Clicks use `elementFromPoint` on pointer-up, so pointer capture
   during a drag does not break selection. The callouts are in
-  `#presetLayer`, outside `#world`, so "fit" ignores them.
+  `#presetLayer` and the riff dots are in `#riffLayer`. Both are outside
+  `#world`, so "fit" ignores them. `setVB` hides the built-in fret numbers
+  (`.fretnum`) while a riff is active, because the riff draws its own.
 - **presets API.** `applyConfig(cfg)` normalizes a config with `normalize`
   (keys and aliases in `SCHEMA`). Then it sets `ST`, makes the steps
   (`stepsFor`), draws the callouts (`drawCallouts`, placed by `ANCHOR`) and
@@ -154,6 +159,30 @@ JavaScript builds the SVG at load time. Named sections divide the script
   saved presets as API configs. `DRAFT` keeps the name and note that are not
   saved yet, so a new render does not lose them. Export and Import use the
   `sixmart-presets` JSON format (`API.md`, section 6).
+- **riffs.** `riffNormalize` reads a config (keys in `RSCHEMA`). It gives
+  `riff` text to `parseCompact` (`6/3`, `[5/2 4/4]`, `|`, `5/5h7`) and
+  `tab` text to `parseTab`. Both make the same event list. An event is
+  `{notes:[{s, f, tech?, bend?, vib?, ghost?, mute?}], bar, w}`. `s` is the
+  string number (1 = high e, 6 = low E), and the drawing index is `6 - s`. `parseTab` groups numbers whose columns overlap into one event,
+  and the column gap `w` sets the timing of Play. `applyRiff` sets `RIFF`,
+  draws the layer (`drawRiff`), shows the card (`riffHTML`, `tabSVG`) and
+  zooms (`riffView`, `riffBox`). `notePos` puts a fretted note at 60% of
+  its fret space and an open string above the nut. Dot size follows the
+  string spacing (`strGap`). `riffStep` changes the step in place, without
+  a new render. A link keeps the tab text when the riff came from a tab,
+  and otherwise the compact form. Sound keys in a riff config make a
+  suggested sound. **Set this sound** calls `applyConfig` with
+  `url:false`, so the address keeps the riff. `RIFFS` holds the examples,
+  and `RIFF_GROUPS` sorts them into the groups of the Riffs list. A new
+  example needs a place in a group. `[G: 6/3 …]` gives a chord its name
+  (`e.name`), which the tab, the label and the step text show. On a chord
+  step, the class `chordstep` fades the dots of the other chords. Check
+  the notes of a new example against its scale, chord or melody with
+  `sixmart.parseRiff(...).events`, which gives each note name.
+  Keep each `source` honest: a song riff is a learning version that was
+  not checked against the recording. `route` sends a URL config to
+  `applyRiff` when it has `riff` or `tab`, and to `applyConfig` when it
+  does not.
 - **Start.** The last lines call `applyState()`, fit the view, render the
   overview and route the URL.
 
@@ -173,6 +202,7 @@ The data stays in the reader's browser only. Each read and write is in a
 | `index.html#<part key>` | That part, zoomed, with its panel |
 | `index.html#api` | The preset API reference |
 | `index.html#key=value&…` or `?key=value&…` | A preset (see `API.md`) |
+| `index.html#riff=…` or `#tab=…`, with optional sound keys | A riff on the fretboard (see `API.md`, section 7) |
 
 ## Rules
 

@@ -123,6 +123,28 @@ svg.dg{width:100%;height:auto;display:block;border-radius:8px;background:var(--p
 .empty{color:var(--muted);font-size:13px;margin:0 0 10px}
 .callout .ring{opacity:.45}.callout line{opacity:.5}.callout rect{fill-opacity:.82}.callout.active .ring{animation:pulse 1.1s ease-in-out infinite}
 @keyframes pulse{0%,100%{stroke-width:.9;opacity:.6}50%{stroke-width:2.4;opacity:1}}
+.rf-num{font:600 4.4px system-ui,sans-serif;fill:var(--ink);stroke:var(--panel);stroke-width:1.2px;paint-order:stroke;text-anchor:end}
+.rf-str{font:700 4.8px system-ui,sans-serif;fill:#1b1a19;stroke:#f6ecd6;stroke-width:1.2px;paint-order:stroke;text-anchor:middle}
+.rf-dot circle{fill:#fff;stroke:var(--accent);stroke-width:.8}.rf-dot text{font:800 4.3px system-ui,sans-serif;fill:#1b1a19;text-anchor:middle}
+.rf-dot.next circle{stroke-width:1.2;stroke-dasharray:1.5 .9}.rf-dot.next text{fill:var(--accent)}
+.rf-dot.on circle{fill:var(--accent);stroke:#fff;stroke-width:.7}.rf-dot.on text{fill:var(--accent-ink)}
+.rf-dot .rf-pulse{fill:none;stroke:var(--accent);animation:pulse 1.1s ease-in-out infinite}
+.riff.chordstep .rf-dot:not(.on):not(.next){opacity:.3}
+.rf-path{stroke:var(--accent);stroke-width:.8;stroke-dasharray:2 1.4;fill:none;opacity:.85}
+.rf-pill rect{fill:var(--accent)}.rf-pill text{font:700 4.2px system-ui,sans-serif;fill:var(--accent-ink)}
+@media (prefers-reduced-motion:reduce){.rf-dot .rf-pulse,.callout.active .ring{animation:none}}
+.tabwrap{margin:10px 0 4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px 4px 0}
+svg.tabsvg{width:100%;height:auto;display:block}
+.tabsvg .tl{stroke:var(--muted);stroke-opacity:.45;stroke-width:.7}.tabsvg .tb{stroke:var(--muted);stroke-width:.9}
+.tabsvg .tn{font:600 7.5px ui-monospace,Menlo,monospace;fill:var(--muted)}
+.tabsvg .tf{font:700 10px ui-monospace,Menlo,monospace;fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--panel);stroke-width:3.4px;stroke-linejoin:round}
+.tabsvg .tt{font:600 7px ui-monospace,Menlo,monospace;fill:var(--muted);text-anchor:middle}
+.tabsvg .tc{font:700 7.5px system-ui,sans-serif;fill:var(--accent);text-anchor:middle}
+.tabsvg .tcol{cursor:pointer}.tabsvg .thit{fill:var(--accent);fill-opacity:0}
+.tabsvg .tcol:hover .thit{fill-opacity:.07}.tabsvg .tcol.on .thit{fill-opacity:.07;stroke:var(--accent);stroke-width:.9}.tabsvg .tcol.on .tf{fill:var(--accent)}
+.rnow{margin:8px 0 2px}.rnow b{display:block}.rnow span{display:block;color:var(--muted);font-size:12.5px}
+.rctl{margin-top:8px}
+textarea.tabin{display:block;font:12px/1.35 ui-monospace,Menlo,monospace;resize:vertical;white-space:pre;overflow-x:auto}
 @media (max-width:860px){
   body{overflow:auto;height:auto}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:64vh auto;height:auto}
@@ -178,6 +200,7 @@ svg.dg{width:100%;height:auto;display:block;border-radius:8px;background:var(--p
         <clipPath id="bodyClip"><path id="bodyClipPath"/></clipPath>
       </defs>
       <g id="world"></g>
+      <g id="riffLayer" pointer-events="none"></g>
       <g id="presetLayer" pointer-events="none"></g>
       <rect id="hoverBox" fill="none" stroke="var(--accent)" stroke-opacity=".5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" stroke-width="1.5" rx="3" visibility="hidden" pointer-events="none"/>
       <rect id="selBox" fill="none" stroke="var(--accent)" vector-effect="non-scaling-stroke" stroke-width="2" rx="3" visibility="hidden" pointer-events="none"/>
@@ -584,8 +607,9 @@ function foot(){return `<div class="foot"><div class="legend">${tag('spec')} ret
 function renderOverview(){
  const byG=GROUPS.map(g=>`<div class="group-label">${g}</div><div class="chips">${Object.entries(PARTS).filter(([,p])=>p.group===g).map(([k,p])=>`<button class="chip" data-go="${k}">${esc(p.name)}</button>`).join('')}</div>`).join('');
  panel.innerHTML=`<h1>Tagima Sixmart</h1><p class="sub">HSS Strat style with built-in effects · Sparkling Candy Apple</p>
- ${presetHTML()}<div class="secs">
+ ${riffHTML()}${presetHTML()}<div class="secs">
  ${sec('ov.tuning','Tuning',TUNE_HINT,tuningRows()+`<div class="chips" style="margin-top:10px"><button class="chip" data-go="strings" data-open-adj="wind">Strings &amp; winding →</button></div>`,false)}
+ ${sec('ov.riffs','Riffs',`${Object.keys(RIFFS).length} riffs · scales · chords · songs`,riffsSecHTML(),true)}
  ${sec('ov.setup','Setup','Relief · action · nut · pickups · intonation · float',`<p class="sub">Do the steps in this order. Each step opens its diagram. Values are general Strat-style references ${tag('ref')}.</p><div class="order">${SETUP_ORDER.map(([k,l,a,v])=>`<button data-go="${k}" data-open-adj="${a}"><b>${l}</b><span>${esc(v||ADJ[a].value)}</span></button>`).join('')}</div>`,false)}
  ${sec('ov.fx','Effects & sound',soundHint(),`<div class="sound" id="sound">${soundText()}</div>${tunerHTML()}${saveHTML()}`,true)}
  ${sec('ov.presets','Presets',`${SAVED.length} saved · ${Object.keys(EXAMPLES).length} examples`,savedHTML()+`<div class="group-label">Examples</div><div class="chips">${Object.entries(EXAMPLES).map(([k,e])=>`<button class="chip" data-example="${k}">${esc(e.title)}</button>`).join('')}</div>
@@ -595,7 +619,7 @@ function renderOverview(){
  </div>${foot()}`;}
 function renderPart(key){
  const p=PARTS[key];
- panel.innerHTML=`<button class="back" data-home>← Whole guitar</button>${PRESET?`<button class="back" data-preset-home style="margin-left:14px">▲ Preset: ${esc(PRESET.title||'untitled')}</button>`:''}<h1>${esc(p.name)}</h1><p class="sub">${p.group}</p><p class="what">${esc(p.what)}</p>
+ panel.innerHTML=`<button class="back" data-home>← Whole guitar</button>${RIFF?`<button class="back" data-home style="margin-left:14px">▲ Riff: ${esc(RIFF.title||'untitled')}</button>`:''}${PRESET?`<button class="back" data-preset-home style="margin-left:14px">▲ Preset: ${esc(PRESET.title||'untitled')}</button>`:''}<h1>${esc(p.name)}</h1><p class="sub">${p.group}</p><p class="what">${esc(p.what)}</p>
  <div class="secs">
  ${p.ctl?sec('part.setting','Setting',soundHint(),`${ctlHTML(p.ctl)}<div class="sound" id="sound">${soundText()}</div>`,true):''}
  ${p.adjust?sec('part.adjust','Adjustments',p.adjust.map(k=>ADJ[k].title).join(' · '),adjHTML(p.adjust),true):''}
@@ -603,7 +627,18 @@ function renderPart(key){
  ${p.setup.length?sec('part.notes','Setup notes',p.setup.map(r=>r[0]).join(' · '),rows(p.setup),true):''}
  ${p.specs.length?sec('part.specs','Specs',p.specs.map(r=>r[1]).join(' · '),rows(p.specs),true):''}
  </div>${foot()}`;}
-panel.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+panel.addEventListener('click',e=>{const tc=e.target.closest('[data-rstep]');if(tc){riffStep(+tc.dataset.rstep,!!RTIMER);return;}
+ const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.riffEx){applyRiff(RIFFS[b.dataset.riffEx]);return;}
+ if('riffClear' in b.dataset){clearRiff();return;}
+ if('riffPrev' in b.dataset){if(RIFF)riffStep(RIFF.step-1);return;}
+ if('riffNext' in b.dataset){if(RIFF)riffStep(RIFF.step+1);return;}
+ if('riffPlay' in b.dataset){riffPlay();return;}
+ if('riffView' in b.dataset){riffView();return;}
+ if('riffSound' in b.dataset){if(RIFF&&RIFF.sound)applyConfig(canonical(RIFF.sound,{title:(RIFF.title||'Riff')+' · sound'}),{url:false});return;}
+ if('riffCopy' in b.dataset){copyText(riffLink(),b);return;}
+ if('riffPaste' in b.dataset){pasteRiff();return;}
+ if('apiRiffs' in b.dataset){showApi();const d=panel.querySelector('[data-sec="api.riffs"]');if(d){d.open=true;requestAnimationFrame(()=>d.scrollIntoView({block:'start'}));}return;}
  if(b.dataset.go){select(b.dataset.go);if(b.dataset.openAdj)openAdj(b.dataset.openAdj);return;}
  if('home' in b.dataset){home();return;}
  if('presetHome' in b.dataset){home();return;}
@@ -628,6 +663,8 @@ panel.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)retu
 panel.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.dataset)return;const id=d.dataset.sec||(d.dataset.adj?'adj.'+d.dataset.adj:'');if(!id)return;OPEN[id]=d.open?1:0;try{localStorage.setItem('sixmart.open',JSON.stringify(OPEN));}catch(err){}},true);
 panel.addEventListener('input',e=>{const t=e.target;
  if(t.id==='pName'){DRAFT.name=t.value;return;} if(t.id==='pNote'){DRAFT.note=t.value;return;}
+ if(t.id==='rTab'){RDRAFT=t.value;return;}
+ if(t.id==='rBpm'){if(RIFF){RIFF.bpm=+t.value;document.getElementById('rBpmV').textContent=RIFF.bpm+' bpm';const lb=panel.querySelector('.riffcard .linkbox');if(lb)lb.value=riffLink();}return;}
  const map={cVol:'vol',cTone:'tone',cDelay:'delay',cRev:'reverb'}; if(!map[t.id])return;
  ST[map[t.id]]=+t.value; document.getElementById(t.id+'V').textContent=knobText(+t.value); controlsChanged(map[t.id],false);});
 panel.addEventListener('change',e=>{if(e.target.id==='pFile'){importFile(e.target.files&&e.target.files[0]);e.target.value='';}});
@@ -639,7 +676,7 @@ let vb={x:0,y:0,w:600,h:1300}, anim=null, current=null;
 const full=()=>world.getBBox();
 function setVB(v){vb=v;svg.setAttribute('viewBox',`${v.x} ${v.y} ${v.w} ${v.h}`);
  const f=full(); document.getElementById('zlvl').textContent=Math.round(Math.max(f.height/v.h,f.width/v.w)*100)+'%';
- document.querySelectorAll('.fretnum').forEach(t=>t.setAttribute('fill-opacity',v.w<140?.55:0));}
+ document.querySelectorAll('.fretnum').forEach(t=>t.setAttribute('fill-opacity',v.w<140&&!RIFF?.55:0));}
 function aspect(){const r=stage.getBoundingClientRect();return r.width/Math.max(1,r.height);}
 function boxView(b,pad){let w=b.width+pad*2,h=b.height+pad*2;const a=aspect();if(w/h<a)w=h*a;else h=w/a;return{x:b.x+b.width/2-w/2,y:b.y+b.height/2-h/2,w,h};}
 function animateTo(t,ms=520){cancelAnimationFrame(anim);const s={...vb},t0=performance.now();
@@ -674,12 +711,13 @@ function select(key,instant){current=key;const g=world.querySelector(`[data-part
  const sb=document.getElementById('selBox');box(sb,b);hb.setAttribute('visibility','hidden');
  const min=Math.max(b.width,b.height)<40?18:Math.max(b.width,b.height)*.25;
  (instant?setVB:animateTo)(boxView(b,min));renderPart(key);try{history.replaceState(null,'','#'+key);}catch(e){}document.getElementById('crumbTitle').textContent=PARTS[key].name;}
-function home(){current=null;try{history.replaceState(null,'',location.pathname+(PRESET?'#'+presetParams():location.search));}catch(e){}document.getElementById('selBox').setAttribute('visibility','hidden');animateTo(boxView(full(),20));renderOverview();document.getElementById('crumbTitle').textContent='Tagima Sixmart';}
+function home(){current=null;try{history.replaceState(null,'',location.pathname+(RIFF?'#'+riffParamsOf(RIFF):PRESET?'#'+presetParams():location.search));}catch(e){}document.getElementById('selBox').setAttribute('visibility','hidden');animateTo(boxView(full(),20));renderOverview();document.getElementById('crumbTitle').textContent='Tagima Sixmart';}
 document.getElementById('home').onclick=home;
 document.getElementById('fit').onclick=()=>animateTo(boxView(full(),20));
 document.getElementById('zin').onclick=()=>{const c={x:vb.x+vb.w/2,y:vb.y+vb.h/2};const t={...vb};const f=.6;animateTo({x:c.x-(c.x-t.x)*f,y:c.y-(c.y-t.y)*f,w:t.w*f,h:t.h*f},260);};
 document.getElementById('zout').onclick=()=>{const c={x:vb.x+vb.w/2,y:vb.y+vb.h/2};const f=1/.6;animateTo({x:c.x-(c.x-vb.x)*f,y:c.y-(c.y-vb.y)*f,w:vb.w*f,h:vb.h*f},260);};
-addEventListener('keydown',e=>{if(e.key==='Escape')home();if(e.target.tagName==='INPUT')return;if(e.key==='+'||e.key==='=')document.getElementById('zin').click();if(e.key==='-')document.getElementById('zout').click();});
+addEventListener('keydown',e=>{if(e.key==='Escape')home();if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;
+ if(RIFF&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){e.preventDefault();riffStep(RIFF.step+(e.key==='ArrowRight'?1:-1));return;}if(e.key==='+'||e.key==='=')document.getElementById('zin').click();if(e.key==='-')document.getElementById('zout').click();});
 new ResizeObserver(()=>{const c={x:vb.x+vb.w/2,y:vb.y+vb.h/2};const a=aspect();let w=vb.w,h=vb.h;if(w/h<a)w=h*a;else h=w/a;
  // keep the zoom level: base on the dimension that was fitting
  setVB({x:c.x-w/2,y:c.y-h/2,w,h});}).observe(stage);
@@ -772,7 +810,7 @@ function presetView(instant){if(!PRESET)return;layer.querySelectorAll('.callout'
 function focusStep(i){if(!PRESET||!PRESET.steps[i])return;PRESET.active=i;layer.querySelectorAll('.callout').forEach(c=>c.classList.toggle('active',+c.dataset.step===i));
  panel.querySelectorAll('.steps button').forEach(b=>b.classList.toggle('on',+b.dataset.step===i));
  const a=ANCHOR[PRESET.steps[i].key],m=a.r+16;animateTo(boxView({x:a.x-m,y:a.y-m,width:m*2,height:m*2},4));}
-function clearPreset(){PRESET=null;layer.innerHTML='';try{history.replaceState(null,'',location.pathname+(current?'#'+current:''));}catch(e){}if(current)renderPart(current);else{renderOverview();document.getElementById('crumbTitle').textContent='Tagima Sixmart';}}
+function clearPreset(){PRESET=null;layer.innerHTML='';try{history.replaceState(null,'',location.pathname+(current?'#'+current:RIFF?'#'+riffParamsOf(RIFF):''));}catch(e){}if(current)renderPart(current);else{renderOverview();document.getElementById('crumbTitle').textContent=RIFF?(RIFF.title||'Riff'):'Tagima Sixmart';}}
 function copyText(t,b){const o=b.textContent;const done=()=>{b.textContent='Copied';setTimeout(()=>b.textContent=o,1200);};
  if(navigator.clipboard)navigator.clipboard.writeText(t).then(done).catch(()=>{const i=panel.querySelector('.linkbox');if(i){i.select();}});else{const i=panel.querySelector('.linkbox');if(i)i.select();}}
 function presetHTML(){
@@ -817,7 +855,7 @@ function savedHTML(){return `<div class="group-label" style="margin-top:0">My pr
 function syncPreset(k){if(!PRESET)return;if(!PRESET.given.includes(k)){PRESET.given.push(k);PRESET.active=-1;}
  const set={};PRESET.given.forEach(g=>set[g]=ST[g]);PRESET.steps=stepsFor(set,ST);PRESET.edited=true;drawCallouts(PRESET.steps);
  if(PRESET.active>=0)layer.querySelectorAll('.callout').forEach(c=>c.classList.toggle('active',+c.dataset.step===PRESET.active));
- if(!current){try{history.replaceState(null,'',location.pathname+'#'+presetParams());}catch(e){}}}
+ if(!current&&!RIFF){try{history.replaceState(null,'',location.pathname+'#'+presetParams());}catch(e){}}}
 function controlsChanged(k,rerender){save();applyState();syncPreset(k);
  if(rerender){const y=panel.scrollTop;if(current)renderPart(current);else renderOverview();panel.scrollTop=y;return;}
  const sd=document.getElementById('sound');if(sd)sd.innerHTML=soundText();
@@ -828,7 +866,7 @@ function doSave(){
  const r=upsertSaved([canonical(currentSet(),{title,note})]);
  DRAFT={name:title,note};
  if(PRESET){PRESET.title=title;PRESET.note=note;PRESET.given=[...ALLKEYS];PRESET.steps=stepsFor(currentSet(),ST);PRESET.edited=false;PRESET.active=-1;drawCallouts(PRESET.steps);
-  document.getElementById('crumbTitle').textContent=title;try{history.replaceState(null,'',location.pathname+'#'+presetParams());}catch(e){}}
+  document.getElementById('crumbTitle').textContent=title;if(!RIFF){try{history.replaceState(null,'',location.pathname+'#'+presetParams());}catch(e){}}}
  rerenderOverview();
  setStatus('saveStatus',r.stored?`${r.updated?'Updated':'Saved'} “${title}” in this browser. It is in Presets below.`:`Could not write to this browser's storage. “${title}” stays until you reload: use Export JSON to keep it.`,r.stored?'ok':'err');}
 function deleteSaved(i,b){if(!SAVED[i])return;
@@ -847,11 +885,250 @@ async function importFile(f){if(!f)return;
  let d;try{d=JSON.parse(await f.text());}catch(e){setStatus('presetStatus','The file is not valid JSON.','err');return;}
  const r=importPresets(d);rerenderOverview();
  setStatus('presetStatus',`Imported ${r.added} new, updated ${r.updated}${r.skipped?`, skipped ${r.skipped} with no controls`:''}.${r.stored?'':' Storage is not available: export again to keep them.'}`,r.added+r.updated?'ok':'err');}
+/* ---------- riffs: a tab from a link, a script or the player; the page marks each note on the fretboard and steps through them ---------- */
+const OPEN_MIDI=[0,64,59,55,50,45,40]; // by string number, standard tuning: 1 = high e … 6 = low E. Drawing index i = 6 - string
+const SNAME=['','high e','B','G','D','A','low E'],SLET=['','e','B','G','D','A','E'],ORDN=['','1st','2nd','3rd','4th','5th','6th'];
+const NOTENAME=['C','C♯/D♭','D','D♯/E♭','E','F','F♯/G♭','G','G♯/A♭','A','A♯/B♭','B'];
+const STRLET={e:1,B:2,b:2,G:3,g:3,D:4,d:4,A:5,a:5,E:6};
+const TECH={h:['h','hammer-on: do not pick, press the new fret hard'],p:['p','pull-off: do not pick, pull the finger off the string'],su:['/','slide up: keep the finger pressed'],sd:['\\','slide down: keep the finger pressed']};
+const MAXFRET=22,DEFBPM=90,MAXEV=400,MAXTAB=8000;
+const RSCHEMA={
+ riff:{aliases:['notes'],values:'string/fret notes, for example 6/0 6/3 6/5',what:'The notes in play order'},
+ tab:{aliases:['ascii'],values:'ASCII tab text, high e on top',what:'A guitar tab as text. Give riff or tab'},
+ title:{aliases:['name'],values:'text, up to 120 characters',what:'Name of the riff'},
+ note:{aliases:['desc','why','artist'],values:'text, up to 120 characters',what:'One line: who plays it, what to listen for'},
+ source:{aliases:['src'],values:'text, up to 120 characters',what:'How exact the notes are'},
+ bpm:{aliases:['tempo'],values:'30–240, default 90',what:'Speed of Play. One beat is the usual gap between two notes'},
+};
+const RALIAS={};for(const [k,d] of Object.entries(RSCHEMA)){RALIAS[k]=k;d.aliases.forEach(a=>RALIAS[a]=k);}
+const SONG='Common learning version. Not checked note for note against the recording.';
+const RIFFS={
+ 'open-strings':{title:'Open strings',note:'Pick each string once, thickest to thinnest and back. Learn the names E A D G B E.',source:'Exercise. The notes are exact.',riff:'6/0 5/0 4/0 3/0 2/0 1/0 | 1/0 2/0 3/0 4/0 5/0 6/0',bpm:60,pickup:5,effects:'off',volume:8,tone:8},
+ 'chromatic':{title:'Chromatic warm-up 1-2-3-4',note:'One finger per fret: first finger on fret 1, fourth finger on fret 4. Every string, low E to high e.',source:'Exercise. The notes are exact.',riff:'6/1 6/2 6/3 6/4 | 5/1 5/2 5/3 5/4 | 4/1 4/2 4/3 4/4 | 3/1 3/2 3/3 3/4 | 2/1 2/2 2/3 2/4 | 1/1 1/2 1/3 1/4',bpm:70,pickup:5,effects:'off',volume:8,tone:8},
+ 'em-pentatonic':{title:'E minor pentatonic scale',note:'Open position, up and back down. The first scale most players learn.',source:'Exercise. The notes are exact.',riff:'6/0 6/3 5/0 5/2 4/0 4/2 3/0 3/2 2/0 2/3 1/0 1/3 | 1/0 2/3 2/0 3/2 3/0 4/2 4/0 5/2 5/0 6/3 6/0',bpm:80,pickup:5,effects:'off',volume:8,tone:8},
+ 'am-pentatonic':{title:'A minor pentatonic, box 1',note:'The shape behind most blues and rock solos. First finger on fret 5, up and back down.',source:'Exercise. The notes are exact.',riff:'6/5 6/8 5/5 5/7 4/5 4/7 3/5 3/7 2/5 2/8 1/5 1/8 | 1/5 2/8 2/5 3/7 3/5 4/7 4/5 5/7 5/5 6/8 6/5',bpm:80,pickup:1,effects:'on',mode:'over',volume:7,tone:6,delay:2,reverb:3},
+ 'c-major':{title:'C major scale',note:'Open position: do re mi fa sol la ti do, up and back down.',source:'Exercise. The notes are exact.',riff:'5/3 4/0 4/2 4/3 3/0 3/2 2/0 2/1 | 2/0 3/2 3/0 4/3 4/2 4/0 5/3',bpm:80,pickup:5,effects:'off',volume:8,tone:8},
+ 'open-chords':{title:'Seven open chords',note:'Em, Am, C, G, D, E and A: the first chord shapes most players learn. Do not play a string that has no dot.',source:'Standard open chord shapes. Exact.',riff:'[Em: 6/0 5/2 4/2 3/0 2/0 1/0] | [Am: 5/0 4/2 3/2 2/1 1/0] | [C: 5/3 4/2 3/0 2/1 1/0] | [G: 6/3 5/2 4/0 3/0 2/0 1/3] | [D: 4/0 3/2 2/3 1/2] | [E: 6/0 5/2 4/2 3/1 2/0 1/0] | [A: 5/0 4/2 3/2 2/2 1/0]',bpm:30,pickup:3,effects:'off',volume:8,tone:7},
+ 'four-chords':{title:'Four chords: G, D, Em, C',note:'The progression behind hundreds of pop songs. Strum each chord four times, then change.',source:'Standard open chord shapes. Exact.',riff:'[G: 6/3 5/2 4/0 3/0 2/0 1/3] | [D: 4/0 3/2 2/3 1/2] | [Em: 6/0 5/2 4/2 3/0 2/0 1/0] | [C: 5/3 4/2 3/0 2/1 1/0]',bpm:30,pickup:4,effects:'on',mode:'clean',volume:7,tone:7,delay:2,reverb:4},
+ 'twinkle':{title:'Twinkle, Twinkle, Little Star',note:'Traditional. The melody on the A, D and G strings.',source:'Public domain melody. The notes are exact. The rhythm is not shown.',riff:'5/3 5/3 3/0 3/0 3/2 3/2 3/0 | 4/3 4/3 4/2 4/2 4/0 4/0 5/3',bpm:90,pickup:5,effects:'off',volume:8,tone:8},
+ 'ode-to-joy':{title:'Ode to Joy',note:'Beethoven. The melody on the two highest strings.',source:'Public domain melody. The notes are exact. The rhythm is not shown.',riff:'1/0 1/0 1/1 1/3 | 1/3 1/1 1/0 2/3 | 2/1 2/1 2/3 1/0 | 1/0 2/3 2/3',bpm:100,pickup:5,effects:'on',mode:'clean',volume:7,tone:7,delay:3,reverb:5},
+ 'happy-birthday':{title:'Happy Birthday',note:'The melody on the three highest strings.',source:'Public domain melody. The notes are exact. The rhythm is not shown.',riff:'3/0 3/0 3/2 3/0 2/1 2/0 | 3/0 3/0 3/2 3/0 2/3 2/1 | 3/0 3/0 1/3 1/0 2/1 2/0 3/2 | 1/1 1/1 1/0 2/1 2/3 2/1',bpm:90,pickup:5,effects:'on',mode:'clean',volume:7,tone:7,delay:2,reverb:4},
+ 'smoke':{title:'Smoke on the Water',note:'Deep Purple. One-string version on the low E string.',source:SONG,tab:'e|--------------------------------\nB|--------------------------------\nG|--------------------------------\nD|--------------------------------\nA|--------------------------------\nE|--0--3--5---0--3--6-5---0--3--5---3--0--',bpm:110,pickup:1,effects:'on',mode:'over',volume:8,tone:6,delay:0,reverb:3},
+ 'seven-nation':{title:'Seven Nation Army',note:'The White Stripes. The main riff, all on the A string. Hold the first note.',source:SONG,riff:'5/7 5/7 5/10 5/7 5/5 5/3 5/2',bpm:100,pickup:1,effects:'on',mode:'dist',volume:9,tone:5,delay:0,reverb:2},
+ 'iron-man':{title:'Iron Man',note:'Black Sabbath. Two-note power chords: first finger on the A string, third finger on the D string.',source:SONG,riff:'[B5: 5/2 4/4] | [D5: 5/5 4/7] [D5: 5/5 4/7] [E5: 5/7 4/9] [E5: 5/7 4/9] | [G5: 5/10 4/12] [F#5: 5/9 4/11] [G5: 5/10 4/12] [F#5: 5/9 4/11] [G5: 5/10 4/12] [F#5: 5/9 4/11] | [D5: 5/5 4/7] [D5: 5/5 4/7] [E5: 5/7 4/9] [E5: 5/7 4/9]',bpm:80,pickup:1,effects:'on',mode:'dist',volume:9,tone:5,delay:0,reverb:2},
+ 'teen-spirit':{title:'Smells Like Teen Spirit',note:'Nirvana. The four power-chord shapes of the intro, one per bar. The song strums each one in a rhythm.',source:'Chord shapes F5, B♭5, A♭5 and D♭5. The rhythm is not shown.',riff:'[F5: 6/1 5/3 4/3] | [Bb5: 5/1 4/3 3/3] | [Ab5: 6/4 5/6 4/6] | [Db5: 5/4 4/6 3/6]',bpm:50,pickup:1,effects:'on',mode:'dist',volume:9,tone:6,delay:0,reverb:2},
+};
+// the side panel lists the examples in these groups, from first steps to songs
+const RIFF_GROUPS=[['First steps',['open-strings','chromatic']],['Scales',['em-pentatonic','am-pentatonic','c-major']],['Chords',['open-chords','four-chords']],['Melodies',['twinkle','ode-to-joy','happy-birthday']],['Song riffs',['smoke','seven-nation','iron-man','teen-spirit']]];
+let RIFF=null,RTIMER=null,RDRAFT='';
+const rlayer=document.getElementById('riffLayer');
+const noteName=n=>NOTENAME[(OPEN_MIDI[n.s]+n.f)%12];
+// compact notation: 6/3 = string 6 fret 3; [5/2 4/4] together; | bar; 5/5h7 p s / \ chains on one string; b9 bend, r7 release, ~ vibrato; 6/x muted; (5/7) ghost
+const NOTE_RE=/^(\(?)([1-6]|[eBGDAEbgda])[\/:](x|X|\d{1,2})(\)?)((?:[hps\/\\]\d{1,2}|[br]\d{1,2}|~)*)$/;
+function parseCompact(str,warn){
+ const ev=[];let bar=false;
+ const one=(tok,inChord)=>{
+  const m=NOTE_RE.exec(tok);
+  if(!m){warn.push(`"${tok}" is not a note. Write string/fret, for example 6/3.`);return [];}
+  const s=/\d/.test(m[2])?+m[2]:STRLET[m[2]];
+  let last=/x/i.test(m[3])?{s,f:0,mute:true}:{s,f:+m[3]};if(m[1]&&m[4])last.ghost=true;
+  const chain=[last];
+  for(const t of m[5].match(/[hps\/\\]\d{1,2}|[br]\d{1,2}|~/g)||[]){
+   if(t==='~'){last.vib=true;continue;}
+   const c=t[0],f=+t.slice(1);
+   if(c==='b'){last.bend=f;continue;}if(c==='r'){last.rel=f;continue;}
+   if(inChord){warn.push(`"${tok}": a hammer-on, pull-off or slide inside [ ] is ignored.`);continue;}
+   last={s,f,tech:c==='h'?'h':c==='p'?'p':'s'};chain.push(last);}
+  return chain;};
+ for(const t of String(str).match(/\[[^\]]*\]|\||[^\s,[\]|]+/g)||[]){
+  if(t==='|'){bar=true;continue;}
+  if(t[0]==='['){const notes=[],parts=t.slice(1,-1).split(/[\s,]+/).filter(Boolean);let name='';
+   if(parts.length>1&&/:$/.test(parts[0])&&!NOTE_RE.test(parts[0]))name=parts.shift().slice(0,-1).slice(0,12);
+   for(const x of parts){const n=one(x,true)[0];if(!n)continue;
+    if(notes.some(m=>m.s===n.s)){warn.push(`"${t}" has string ${n.s} two times. The second note is left out.`);continue;}notes.push(n);}
+   if(notes.length){const e={notes,bar,w:1};if(name)e.name=name;ev.push(e);bar=false;}continue;}
+  one(t,false).forEach((n,i)=>ev.push({notes:[n],bar:!i&&bar,w:1}));bar=false;}
+ return ev;}
+// ASCII tab: blocks of tab lines; numbers that start in the same column are one chord; the column gap sets the timing of Play
+function parseTab(text,warn){
+ const blocks=[];let blk=null,tuning=false;
+ for(const raw of String(text).replace(/\r/g,'').replace(/\t/g,'    ').split('\n')){
+  const m=/^\s*([A-Ga-g][#b♯♭]?|[1-6])?\s*([|:])?([-–—0-9xX|hpbrs\/\\~().^*<> =]*)$/.exec(raw.replace(/\s+$/,''));
+  if(!m||(m[3].match(/[-–—]/g)||[]).length<3){blk=null;continue;}
+  if(!blk){blk=[];blocks.push(blk);}
+  if(m[1]&&m[1].length>1)tuning=true;
+  blk.push({label:m[1]||'',body:m[3].replace(/[–—]/g,'-')});}
+ if(tuning)warn.push('A tab line names a tuning that is not standard. This page shows standard tuning (E A D G B E), with the frets as written.');
+ const events=[],shown=[];
+ blocks.forEach((b,bi)=>{
+  if(b.length>6){warn.push(`A tab block has ${b.length} lines. A guitar has 6 strings: the page reads the first 6 lines.`);b=b.slice(0,6);}
+  let map;
+  if(b.length===6)map=/^[Aa]$/.test(b[1].label)&&/^[Bb]$/.test(b[4].label)?[6,5,4,3,2,1]:[1,2,3,4,5,6];
+  else{map=b.map((l,i)=>{const L=l.label;if(!L)return 0;if(/^[1-6]$/.test(L))return +L;if(L[0]==='E')return b.slice(i+1).some(x=>/^[BGDAbgda]/.test(x.label))?1:6;return STRLET[L[0]]||0;});
+   if(map.some(x=>!x)||new Set(map).size!==map.length){warn.push(`A tab block with ${b.length} lines is skipped. Start each line with its string name (e B G D A E), or give all six lines.`);return;}}
+  const W=Math.max(...b.map(l=>l.label.length));shown.push(b.map(l=>l.label.padEnd(W)+'|'+l.body).join('\n'));
+  const notes=[],last={},bars=new Set();
+  b.forEach((l,li)=>{const s=map[li],t=l.body;
+   for(let c=0;c<t.length;c++){const ch=t[c];
+    if(ch==='|'){if(c>0&&c<t.length-1)bars.add(c);continue;}
+    if(ch==='x'||ch==='X'){const n={s,f:0,mute:true,col:c,end:c};notes.push(n);last[s]=n;continue;}
+    if(ch==='~'){if(last[s])last[s].vib=true;continue;}
+    if(ch<'0'||ch>'9')continue;
+    let j=c+1;if(j<t.length&&t[j]>='0'&&t[j]<='9'&&+t.slice(c,j+1)<=24)j++;
+    const f=+t.slice(c,j),pv=c?t[c-1]:'';
+    if(pv==='b'||pv==='r'){if(last[s]){if(pv==='b')last[s].bend=f;else last[s].rel=f;}}
+    else{const n={s,f,col:c,end:j-1};if(pv==='h'||pv==='p')n.tech=pv;else if(pv==='/'||pv==='\\'||pv==='s')n.tech='s';if(pv==='('||t[j]===')')n.ghost=true;notes.push(n);last[s]=n;}
+    c=j-1;}});
+  notes.sort((p,q)=>p.col-q.col||p.s-q.s);
+  const evs=[];
+  for(const n of notes){const cur=evs[evs.length-1];
+   if(cur&&n.col<=cur.end&&!cur.notes.some(m=>m.s===n.s)){cur.notes.push(n);cur.end=Math.max(cur.end,n.end);}else evs.push({col:n.col,end:n.end,notes:[n]});}
+  const bc=[...bars];
+  evs.forEach((e,i)=>{e.bar=i?bc.some(c=>c>evs[i-1].end&&c<e.col):bi>0&&events.length>0;e.w=i<evs.length-1?evs[i+1].col-e.col:0;});
+  const ws=evs.slice(0,-1).map(e=>e.w).sort((p,q)=>p-q);if(evs.length)evs[evs.length-1].w=ws.length?ws[ws.length>>1]:3;
+  for(const e of evs){e.notes.forEach(n=>{delete n.col;delete n.end;});delete e.col;delete e.end;events.push(e);}});
+ return {events,text:shown.join('\n\n')};}
+function riffNormalize(input){
+ const warn=[],meta={},snd={};let riff=null,tab=null,bpm=DEFBPM;
+ const src=input&&typeof input==='object'&&!Array.isArray(input)?input:{};
+ for(const [raw,val] of Object.entries(src)){const key=String(raw).toLowerCase(),k=RALIAS[key];
+  if(key==='sound'&&val&&typeof val==='object'){Object.assign(snd,val);continue;}
+  if(k==='riff'){riff=String(val);continue;}
+  if(k==='tab'){tab=String(val);continue;}
+  if(k==='title'||k==='note'||k==='source'){meta[k]=String(val).trim().slice(0,120);continue;}
+  if(k==='bpm'){const n=parseFloat(val);if(isNaN(n)){warn.push(`bpm "${val}" is not a number. The page uses ${DEFBPM}.`);continue;}bpm=Math.round(Math.min(240,Math.max(30,n)));if(bpm!==n)warn.push(`bpm ${n} was set to ${bpm} (whole numbers from 30 to 240).`);continue;}
+  if(ALIAS[key]&&ALIAS[key]!=='title'&&ALIAS[key]!=='note'){snd[raw]=val;continue;}
+  warn.push(`Unknown parameter "${raw}" ignored. Riff keys: ${Object.keys(RSCHEMA).join(', ')}, and the sound keys ${ORDER.join(', ')}.`);}
+ let events=[],tabText='';
+ if(tab!=null){if(riff!=null)warn.push('Both riff and tab were given. The page uses the tab.');
+  if(tab.length>MAXTAB){warn.push(`The tab is longer than ${MAXTAB} characters. The page reads the start only.`);tab=tab.slice(0,MAXTAB);}
+  const p=parseTab(tab,warn);events=p.events;tabText=p.text;
+  if(!events.length)warn.push('No tab lines found. A tab line has a string name, then dashes and fret numbers: E|--0--3--5--');}
+ else if(riff!=null)events=parseCompact(riff,warn);
+ events=events.map(e=>({...e,notes:e.notes.filter(n=>{if(n.f>MAXFRET){warn.push(`Fret ${n.f} on the ${SNAME[n.s]} string is past fret ${MAXFRET}. It is left out.`);return false;}return true;})})).filter(e=>e.notes.length);
+ if(events.length>MAXEV){warn.push(`The riff has ${events.length} steps. The page shows the first ${MAXEV}.`);events=events.slice(0,MAXEV);}
+ const lastF={};events.forEach(e=>e.notes.forEach(n=>{if(n.tech==='s'){const p=lastF[n.s];n.tech=p!=null&&p>n.f?'sd':'su';}if(!n.mute)lastF[n.s]=n.f;}));
+ const ws=events.map(e=>e.w).sort((p,q)=>p-q),unit=ws.length&&ws[ws.length>>1]||1;
+ let sound=null;if(Object.keys(snd).length){const r=normalize(snd);r.warn.forEach(w=>warn.push('Sound: '+w));if(Object.keys(r.set).length)sound=r.set;}
+ return {events,title:meta.title||'',note:meta.note||'',source:meta.source||'',bpm,unit,sound,tabText,warn};}
+function riffCompact(ev){const out=[];let prev=null;
+ const suf=n=>(n.bend!=null?'b'+n.bend:'')+(n.rel!=null?'r'+n.rel:'')+(n.vib?'~':''),tok=n=>{const t=`${n.s}/${n.mute?'x':n.f}`;return (n.ghost?`(${t})`:t)+suf(n);};
+ ev.forEach((e,i)=>{if(e.bar&&i)out.push('|');
+  if(e.notes.length>1||e.name){out.push('['+(e.name?e.name+': ':'')+e.notes.map(tok).join(' ')+']');prev=null;return;}
+  const n=e.notes[0];
+  if(n.tech&&prev&&prev.s===n.s&&!e.bar&&!n.ghost&&!n.mute)out[out.length-1]+=(n.tech==='h'||n.tech==='p'?n.tech:'s')+n.f+suf(n);else out.push(tok(n));
+  prev=n;});
+ return out.join(' ');}
+function riffParamsOf(r){const p=new URLSearchParams();if(r.tabText)p.set('tab',r.tabText);else p.set('riff',riffCompact(r.events));
+ for(const k of ['title','note','source'])if(r[k])p.set(k,r[k]);if(r.bpm!==DEFBPM)p.set('bpm',r.bpm);
+ if(r.sound){const c=canonical(r.sound,{});for(const k of ORDER)if(k in c)p.set(k,c[k]);}
+ return p.toString().replace(/%2F/gi,'/');}
+const riffLink=()=>RIFF?baseURL()+'#'+riffParamsOf(RIFF):'';
+const isRiffCfg=cfg=>Object.keys(cfg||{}).some(k=>['riff','tab'].includes(RALIAS[String(k).toLowerCase()]));
+function riffSpan(r=RIFF){const fs=r.events.flatMap(e=>e.notes.filter(n=>!n.mute).map(n=>n.f));const lo=fs.length?Math.min(...fs):0,hi=fs.length?Math.max(...fs):0;
+ const start=lo<=5?0:lo-1;return {start,end:Math.min(MAXFRET,Math.max(hi+1,start+5))};}
+// a fretted note sits just behind its fret wire; an open or muted string sits above the nut
+function notePos(n){const i=6-n.s;if(n.mute||!n.f)return{x:nutX(i),y:NUT-10};const y=fretY(n.f-1)+(fretY(n.f)-fretY(n.f-1))*.6;return{x:strX(i,y),y};}
+const shortNote=n=>n.mute?`${SNAME[n.s]} string · muted`:n.f?`${SNAME[n.s]} string · fret ${n.f}`:`open ${SNAME[n.s]} string`;
+function noteText(n){
+ if(n.mute)return `${SNAME[n.s]} string (${ORDN[n.s]}): mute it with the fretting hand and pick`;
+ let t=`${SNAME[n.s]} string (${ORDN[n.s]}) · ${n.f?`fret ${n.f}`:'open'} · ${noteName(n)}`;
+ if(n.tech)t+=` · ${TECH[n.tech][1]}`;
+ if(n.bend!=null)t+=` · bend it up until it sounds like fret ${n.bend}`;
+ if(n.rel!=null)t+=` · let it back down to fret ${n.rel}`;
+ if(n.vib)t+=' · vibrato';if(n.ghost)t+=' · ghost note: play it softly';
+ return t;}
+const stepText=e=>(e.name?e.name+' chord. ':'')+(e.notes.length>1?'Together: '+e.notes.map(noteText).join(' + '):noteText(e.notes[0]));
+const riffStepsText=ev=>ev.map((e,i)=>`${i+1}. ${stepText(e)}`);
+const eventsOut=ev=>ev.map(e=>e.notes.map(n=>{const o={string:n.s,fret:n.mute?null:n.f};if(n.mute)o.muted=true;else o.note=noteName(n);
+ if(n.tech)o.technique=TECH[n.tech][1].split(':')[0];if(n.bend!=null)o.bendTo=n.bend;if(n.rel!=null)o.releaseTo=n.rel;if(n.vib)o.vibrato=true;if(n.ghost)o.ghost=true;return o;}));
+// the box that shows the riff; k grows the labels when the box is tall, so they keep a readable size on screen
+function riffBox(){const {start,end}=riffSpan(),y0=start?fretY(start-1)-8:NUT-26,y1=fretY(end)+5;return {start,end,y0,y1,k:Math.max(1,(y1-y0)/280)};}
+const strGap=y=>9+4.26*Math.max(0,y-NUT)/(SADDLE-NUT); // string spacing in units at height y
+function drawRiff(){
+ rlayer.innerHTML='';if(!RIFF)return;
+ const {start,end,k}=riffBox(),fs=v=>`font-size:${(v*k).toFixed(2)}px`,ev=RIFF.events,cur=ev[RIFF.step],nxt=ev[RIFF.step+1],key=n=>n.s+':'+(n.mute?'x':n.f);
+ const curK=new Set(cur.notes.map(key)),nxtK=new Set(nxt?nxt.notes.map(key):[]),g=el('g',{class:'riff'+(cur.notes.length>1?' chordstep':'')},rlayer);
+ for(let n=Math.max(1,start);n<=end;n++){const y=(fretY(n-1)+fretY(n))/2;el('text',{class:'rf-num',style:fs(4.4),x:(CX-halfW(y)-3.5).toFixed(1),y:(y+1.5*k).toFixed(1)},g).textContent=n;}
+ const sy=start?fretY(start-1)-3:NUT-17.5;for(let s=1;s<=6;s++)el('text',{class:'rf-str',style:`font-size:${(4.8*Math.min(k,1.25)).toFixed(2)}px`,x:strX(6-s,Math.max(sy,NUT)).toFixed(1),y:sy.toFixed(1)},g).textContent=SLET[s];
+ if(nxt){const a=notePos(cur.notes[0]),b=notePos(nxt.notes[0]);if(Math.hypot(a.x-b.x,a.y-b.y)>1)el('line',{class:'rf-path',x1:a.x.toFixed(2),y1:a.y.toFixed(2),x2:b.x.toFixed(2),y2:b.y.toFixed(2)},g);}
+ const pos=new Map();ev.forEach(e=>e.notes.forEach(n=>{const k=key(n);if(!pos.has(k))pos.set(k,n);}));
+ const rank=k=>curK.has(k)?2:nxtK.has(k)?1:0;
+ for(const [k,n] of [...pos].sort(([a],[b])=>rank(a)-rank(b))){const p=notePos(n),st=['','next','on'][rank(k)];
+  const r=.43*strGap(p.y),d=el('g',{class:'rf-dot'+(st?' '+st:''),transform:`translate(${p.x.toFixed(2)} ${p.y.toFixed(2)})`},g);
+  if(st==='on')el('circle',{class:'rf-pulse',r:(r+1.3).toFixed(2)},d);
+  el('circle',{r:r.toFixed(2)},d);el('text',{y:(r*.42).toFixed(2),style:`font-size:${(r*1.16).toFixed(2)}px`},d).textContent=n.mute?'×':n.f;}
+ const ps=cur.notes.map(notePos),py=ps.reduce((s,p)=>s+p.y,0)/ps.length,px=CX+halfW(Math.max(py,NUT))+6;
+ const pg=el('g',{class:'rf-pill'},g),rect=el('rect',{x:px.toFixed(1),y:(py-4.8*k).toFixed(1),height:(9.6*k).toFixed(2),rx:(4.8*k).toFixed(2)},pg);
+ const t=el('text',{x:(px+4.6*k).toFixed(1),y:(py+1.5*k).toFixed(1),style:fs(4.2)},pg);t.textContent=`${RIFF.step+1}/${ev.length} · `+(cur.name?cur.name+' · ':'')+(cur.notes.length>1?`${cur.notes.length} notes together`:shortNote(cur.notes[0]));
+ rect.setAttribute('width',(t.getComputedTextLength()+9.2*k).toFixed(1));}
+function riffView(instant){if(!RIFF)return;const {y0,y1,k}=riffBox(),h=halfW(y1);
+ (instant?setVB:animateTo)(boxView({x:CX-h-12*k,y:y0,width:2*h+12*k+74*k,height:y1-y0},6));}
+function riffNowHTML(){const e=RIFF.events[RIFF.step];return `<b>Step ${RIFF.step+1} of ${RIFF.events.length}${e.name?' · '+esc(e.name):''}${e.notes.length>1?' · play together':''}</b>${e.notes.map(n=>`<span>${esc(noteText(n))}</span>`).join('')}`;}
+function riffStep(i,fromPlay){if(!RIFF)return;if(!fromPlay)stopPlay();RIFF.step=Math.max(0,Math.min(RIFF.events.length-1,i));drawRiff();
+ panel.querySelectorAll('.tcol').forEach(g=>g.classList.toggle('on',+g.dataset.rstep===RIFF.step));
+ const nw=document.getElementById('riffNow');if(nw)nw.innerHTML=riffNowHTML();}
+function playBtn(){const b=panel.querySelector('[data-riff-play]');if(b)b.textContent=RTIMER?'❚❚ Pause':'▶ Play';}
+function stopPlay(){clearTimeout(RTIMER);RTIMER=null;playBtn();}
+function riffPlay(){if(!RIFF)return;if(RTIMER){stopPlay();return;}
+ if(RIFF.step>=RIFF.events.length-1)riffStep(0,true);
+ const tick=()=>{const e=RIFF.events[RIFF.step],ms=60000/RIFF.bpm*Math.min(2.5,Math.max(.4,e.w/RIFF.unit));
+  RTIMER=setTimeout(()=>{if(!RIFF){RTIMER=null;return;}if(RIFF.step>=RIFF.events.length-1){stopPlay();return;}riffStep(RIFF.step+1,true);tick();},ms);};
+ tick();playBtn();}
+// the tab as a staff: high e on top, rows of 12 steps; a click on a column goes to that step
+function tabSVG(){const ev=RIFF.events,N=12,CW=22,LM=16,SP=11,TOP=12,RH=SP*5+24;let o='';
+ for(let a=0,r=0;a<ev.length;a+=N,r++){const b=Math.min(ev.length,a+N),y0=TOP+r*RH;
+  for(let s=1;s<=6;s++){const y=y0+(s-1)*SP;o+=`<line class="tl" x1="${LM}" y1="${y}" x2="${LM+(b-a)*CW+4}" y2="${y}"/><text class="tn" x="3" y="${y+2.7}">${SLET[s]}</text>`;}
+  o+=`<line class="tb" x1="${LM}" y1="${y0}" x2="${LM}" y2="${y0+SP*5}"/>`;
+  for(let k=a;k<b;k++){const x=LM+12+(k-a)*CW,e=ev[k];
+   if(e.bar&&k>a)o+=`<line class="tb" x1="${x-CW/2}" y1="${y0}" x2="${x-CW/2}" y2="${y0+SP*5}"/>`;
+   o+=`<g class="tcol${k===RIFF.step?' on':''}" data-rstep="${k}"><title>Step ${k+1}</title><rect class="thit" x="${x-CW/2+1}" y="${y0-7}" width="${CW-2}" height="${SP*5+14}" rx="3"/>`;
+   if(e.name)o+=`<text class="tc" x="${x}" y="${y0-5}">${esc(e.name)}</text>`;
+   for(const n of e.notes){const y=y0+(n.s-1)*SP;let lab=n.mute?'x':String(n.f);if(n.bend!=null)lab+='b'+n.bend;if(n.vib)lab+='~';if(n.ghost)lab=`(${lab})`;
+    o+=`<text class="tf" x="${x}" y="${y+3.6}">${esc(lab)}</text>`;if(n.tech)o+=`<text class="tt" x="${x-CW/2}" y="${y-3.4}">${esc(TECH[n.tech][0])}</text>`;}
+   o+='</g>';}}
+ return `<svg class="tabsvg" viewBox="0 0 ${LM+N*CW+8} ${TOP+Math.ceil(ev.length/N)*RH-10}" role="img" aria-label="Tab of the riff">${o}</svg>`;}
+function riffHTML(){if(!RIFF)return '';const r=RIFF;
+ return `<div class="preset riffcard"><div class="preset-h"><div><span class="eyebrow">Riff · where to play</span><b>${esc(r.title||'Untitled riff')}</b></div><button class="chip" data-riff-clear>Clear</button></div>
+ ${r.note?`<p class="sub" style="margin:4px 0 0">${esc(r.note)}</p>`:''}${r.source?`<span class="note">${esc(r.source)}</span>`:''}
+ ${r.warn.length?`<div class="warn">${r.warn.map(esc).join('<br>')}</div>`:''}
+ <div class="tabwrap">${tabSVG()}</div>
+ <div class="rnow" id="riffNow">${riffNowHTML()}</div>
+ <div class="chips rctl"><button class="chip" data-riff-prev>◀ Prev</button><button class="chip on" data-riff-play>${RTIMER?'❚❚ Pause':'▶ Play'}</button><button class="chip" data-riff-next>Next ▶</button><button class="chip" data-riff-view>Show on the guitar</button></div>
+ <div class="ctl"><label for="rBpm">Speed<span id="rBpmV">${r.bpm} bpm</span></label><input type="range" id="rBpm" min="30" max="240" step="1" value="${r.bpm}"></div>
+ <p class="note">Play moves through the notes. The timing follows the spacing of the tab, so it is not the exact rhythm. There is no sound. The arrow keys also step.</p>
+ ${r.sound?`<div class="sound" style="margin-top:10px"><b>Suggested sound</b>${esc(cfgSummary(canonical(r.sound,{})))}<div class="chips" style="margin-top:8px"><button class="chip" data-riff-sound>Set this sound</button></div></div>`:''}
+ <div class="chips" style="margin-top:10px"><button class="chip" data-riff-copy>Copy link</button></div>
+ <input class="linkbox" readonly value="${esc(riffLink())}" aria-label="Riff link"></div>`;}
+function riffsSecHTML(){const on=RIFF&&RIFF.key;return `<p class="sub">Pick one: the page puts a dot on every fret it uses and steps through the notes. Start at the top if you are new. Standard tuning (E A D G B E).</p>
+ ${RIFF_GROUPS.map(([g,keys])=>`<div class="group-label">${esc(g)}</div><div class="chips">${keys.map(k=>`<button class="chip${on===k?' on':''}" data-riff-ex="${k}" title="${esc(RIFFS[k].note)}">${esc(RIFFS[k].title)}</button>`).join('')}</div>`).join('')}
+ <div class="group-label">Paste a tab</div>
+ <textarea class="field tabin" id="rTab" rows="7" spellcheck="false" aria-label="Guitar tab" placeholder="e|-----------------|&#10;B|-----------------|&#10;G|-----------------|&#10;D|-----------------|&#10;A|-----------------|&#10;E|--0--3--5--------|">${esc(RDRAFT)}</textarea>
+ <div class="chips" style="margin-top:8px"><button class="chip on" data-riff-paste>Show on the guitar</button><button class="chip" data-api-riffs>How to write one →</button></div>
+ <div class="status" id="riffStatus"></div>`;}
+function pasteRiff(){const t=(RDRAFT||'').trim();if(!t){setStatus('riffStatus','Paste a tab first.','err');return;}
+ const r=applyRiff(/[-–—]{3}/.test(t)?{tab:t,title:'Pasted tab'}:{riff:t,title:'Pasted riff'});
+ if(!r.ok)setStatus('riffStatus',r.warnings.join(' '),'err');}
+function applyRiff(input,opts={}){
+ const r=riffNormalize(input);
+ if(!r.events.length)return {ok:false,warnings:[...r.warn,'No notes found. Give riff (for example 6/0 6/3 6/5) or tab (ASCII tab text).'],events:[],steps:[]};
+ stopPlay();RIFF={...r,step:0,key:Object.keys(RIFFS).find(k=>RIFFS[k].title===r.title)||''};drawRiff();setVB(vb);
+ current=null;document.getElementById('selBox').setAttribute('visibility','hidden');
+ renderOverview();panel.scrollTop=0;document.getElementById('crumbTitle').textContent=RIFF.title||'Riff';
+ if(opts.view!==false)riffView(opts.instant);
+ if(opts.url!==false){try{history.replaceState(null,'',location.pathname+'#'+riffParamsOf(RIFF));}catch(e){}}
+ return {ok:true,title:RIFF.title,events:eventsOut(RIFF.events),steps:riffStepsText(RIFF.events),warnings:r.warn,link:riffLink()};}
+function clearRiff(){stopPlay();RIFF=null;rlayer.innerHTML='';setVB(vb);
+ try{history.replaceState(null,'',location.pathname+(current?'#'+current:PRESET?'#'+presetParams():''));}catch(e){}
+ if(current)renderPart(current);else{renderOverview();document.getElementById('crumbTitle').textContent=PRESET?(PRESET.title||'Preset'):'Tagima Sixmart';}}
+function route(cfg,opts){return isRiffCfg(cfg)?applyRiff(cfg,opts):applyConfig(cfg,opts);}
 function showApi(){
  current=null;document.getElementById('selBox').setAttribute('visibility','hidden');
  const ex=EXAMPLES['ambient-clean'],{set,meta}=normalize(ex),link=baseURL()+'#'+paramsFor(set,{...ST,...set},meta);
  const table=rows(Object.entries(SCHEMA).map(([k,d])=>[k+(d.aliases.length?` (${d.aliases.join(', ')})`:''),`${d.values} — ${d.control}`]));
- panel.innerHTML=`<button class="back" data-home>← Whole guitar</button><h1>Preset API</h1><p class="sub">For an agent or a script that wants to show a setting of the built-in effects on this page</p><div class="api secs">
+ const rx=RIFFS['seven-nation'],rlink=baseURL()+'#'+riffParamsOf({...riffNormalize({riff:rx.riff,title:rx.title}),sound:null});
+ const rtable=rows(Object.entries(RSCHEMA).map(([k,d])=>[k+(d.aliases.length?` (${d.aliases.join(', ')})`:''),`${d.values} — ${d.what}`]).concat([[ORDER.join(', '),'as in section 2 — A suggested sound. The card shows it with a Set this sound button']]));
+ panel.innerHTML=`<button class="back" data-home>← Whole guitar</button><h1>Preset and riff API</h1><p class="sub">For an agent or a script that wants to show a setting of the built-in effects, or where to play a riff, on this page</p><div class="api secs">
  ${sec('api.link','1 · Build a link','#key=value links',`<p>Put the controls in the hash of this page as <code>key=value</code> pairs. A <code>?query</code> works too. Open the link: the page sets the knobs, draws numbered callouts next to the real controls and lists the steps.</p>
  <pre>${esc(link)}</pre><p><a href="${esc(link)}">Open this example</a></p>
  <p>Give all seven controls for a complete preset. A control you leave out keeps its current setting and gets no step. The preset card reports unknown keys and bad values. They do not stop the other controls.</p>`)}
@@ -880,8 +1157,34 @@ sixmart.schema · sixmart.order · sixmart.examples</pre>
  ${sec('api.files','6 · Saved presets and files','sixmart-presets.json',`<p>The player can set the controls by hand in <b>Effects &amp; sound</b> and save the setting with a name. <b>Export JSON</b> and <b>Import JSON</b> are in <b>Presets</b>. The saved list stays in this browser only. The export file is the way to move it or keep a copy.</p>
  <pre>{"format":"sixmart-presets","version":1,"presets":[
  {"title":"Ambient clean","note":"Neck pickup with room for arpeggios","pickup":5,"effects":"on","mode":"clean","volume":8,"tone":7,"delay":4,"reverb":7}]}</pre>
- <p>Import also accepts a plain array of configs or one config object. Each config uses the keys of section 2. A preset with the same title replaces the old one. Import skips an item that sets no control, and reads at most 200 items from a file of at most 1 MB. An agent can write this file for the player to import.</p>`)}</div>${foot()}`;
- document.getElementById('crumbTitle').textContent='Preset API';try{history.replaceState(null,'','#api');}catch(e){}panel.scrollTop=0;
+ <p>Import also accepts a plain array of configs or one config object. Each config uses the keys of section 2. A preset with the same title replaces the old one. Import skips an item that sets no control, and reads at most 200 items from a file of at most 1 MB. An agent can write this file for the player to import.</p>`)}
+ ${sec('api.riffs','7 · Riffs: where to play','riff · tab · steps',`<p>A riff link shows a short tab on the drawing. The page puts a dot on each fret the riff uses, draws the tab in the panel and steps through the notes in order. The <b>Riffs</b> section of the overview lists the examples in groups and has a box to paste a tab.</p>
+ <pre>${esc(rlink)}</pre><p><a href="${esc(rlink)}">Open this example</a></p>
+ ${rtable}
+ <div class="group-label">Notation for riff</div>
+ ${rows([['6/3','String 6, fret 3. Strings go from 1 (high e, the thinnest) to 6 (low E, the thickest). Fret 0 is the open string. Frets go to 22.'],['E/3 · e/0','String letters also work: e B G D A E. Lowercase e is the high e string, uppercase E is the low E string.'],['[5/2 4/4]','Notes played together: a chord or a power chord.'],['[G: 6/3 5/2 4/0 3/0 2/0 1/3]','A chord with a name. Put a colon after the name and a space before the notes. The name shows above the tab column, beside the neck and in the step.'],['|','Bar line.'],['5/5h7 · 5/7p5','Hammer-on, pull-off.'],['5/5s7','Slide. In a tab, / and \\ also work.'],['3/7b9','Bend fret 7 up to the pitch of fret 9.'],['5/7~','Vibrato.'],['6/x','Muted string (a chug).'],['(5/7)','Ghost note: play it softly.']])}
+ <p>Separate the notes with spaces or commas. In a URL, a space is <code>+</code> or <code>%20</code>.</p>
+ <div class="group-label">Tab text</div>
+ <p>Six lines, high e on top and low E at the bottom, as in most tabs. A block with fewer lines needs the string name at the start of each line. Play the numbers that start in the same column together. The spacing between the numbers sets the timing of Play. The page reads only the tab lines, so chord names, lyrics and other text can stay. Standard tuning only (E A D G B E). Limits: 8000 characters, 400 steps, frets 0–22.</p>
+ <div class="group-label">What the player sees</div>
+ <p>A dot on each fret that the riff uses, with the fret number in it. An open string has a dot above the nut. The current note is solid and pulses. The next note has a dashed ring, and a dashed line goes to it. A label beside the neck names the string and the fret, or the chord name. On a chord step, the dots of the other chords fade. The panel shows the tab and the step in words with the note name. It also has Prev, Play and Next, a speed slider, the suggested sound and a link. A click on a tab column goes to that step. The page makes no sound.</p>
+ <div class="group-label">JavaScript</div>
+ <pre>sixmart.riff({riff:'5/7 5/7 5/10 5/7 5/5 5/3 5/2', title:'Seven Nation Army', bpm:100})
+// → {ok, title, events:[[{string, fret, note}]], steps:[...text], warnings, link}
+sixmart.parseRiff({tab:'e|---…'})  // the same data, no UI change
+sixmart.riffStep(3)                // go to step 3 (from 1) → {step, of, text}
+sixmart.clearRiff()                // remove the riff
+sixmart.riffs · sixmart.riffGroups · sixmart.riffSchema</pre>
+ <p>From another window: <code>postMessage({type:'sixmart:riff', riff:{...}}, '*')</code>. The page answers with <code>{type:'sixmart:riffstate', ok, title, events, steps, warnings, link}</code>.</p>
+ <div class="group-label">How to write a riff (for agents)</div>
+ <ol><li>Keep it short: one riff or one exercise, not a whole song.</li>
+ <li>Use standard tuning. If the song uses another tuning, move the notes to standard tuning and say so in <code>source</code>.</li>
+ <li>For a beginner, use the easiest position: open strings and the first five frets when possible, and single notes before chords.</li>
+ <li>Check each note. The open strings are E A D G B E from string 6 to string 1, and each fret is one semitone higher.</li>
+ <li>Say how exact the notes are in <code>source</code>, for example “simplified, one string”. Do not call a riff a transcription if you did not check it against the recording.</li>
+ <li>Add a suggested sound with the keys of section 2 when the riff needs drive or a clean sound.</li></ol>
+ <p>The page has ${Object.keys(RIFFS).length} examples in ${RIFF_GROUPS.length} groups: ${RIFF_GROUPS.map(g=>g[0].toLowerCase()).join(', ')}. The exercises, the chord shapes and the melodies are exact: each note matches its scale, chord or melody. The song riffs are common learning versions that were not checked note for note against the recordings.</p>`)}</div>${foot()}`;
+ document.getElementById('crumbTitle').textContent='Preset and riff API';try{history.replaceState(null,'','#api');}catch(e){}panel.scrollTop=0;
 }
 function configFromURL(){
  const q=new URLSearchParams(location.search);let h=location.hash.slice(1);if(h.startsWith('?'))h=h.slice(1);
@@ -897,16 +1200,22 @@ window.sixmart={schema:SCHEMA,order:ORDER,examples:EXAMPLES,get:()=>stateToConfi
   const r=upsertSaved([canonical(set,{title:meta.title||`Agent preset ${SAVED.length+1}`,note:meta.note||''})]);if(panel.querySelector('[data-sec="ov.presets"]'))rerenderOverview();return {ok:true,stored:r.stored,count:SAVED.length,warnings:warn};},
  saved:()=>JSON.parse(JSON.stringify(SAVED)),
  importPresets:data=>{const r=importPresets(data);if(panel.querySelector('[data-sec="ov.presets"]'))rerenderOverview();return r;},
- exportPresets:()=>JSON.parse(exportPayload())};
+ exportPresets:()=>JSON.parse(exportPayload()),
+ riff:(cfg,opts)=>applyRiff(cfg,opts),
+ parseRiff:cfg=>{const r=riffNormalize(cfg);return {ok:r.events.length>0,title:r.title,events:eventsOut(r.events),steps:riffStepsText(r.events),warnings:r.warn,link:r.events.length?baseURL()+'#'+riffParamsOf(r):''};},
+ riffStep:n=>{if(!RIFF)return null;riffStep((parseInt(n,10)||1)-1);return {step:RIFF.step+1,of:RIFF.events.length,text:stepText(RIFF.events[RIFF.step])};},
+ clearRiff:()=>clearRiff(),
+ riffs:RIFFS,riffGroups:RIFF_GROUPS,riffSchema:RSCHEMA};
 addEventListener('message',e=>{const d=e.data;if(!d||typeof d!=='object'||typeof d.type!=='string')return;
- let r=null;if(d.type==='sixmart:apply')r=applyConfig(d.config||{});else if(d.type==='sixmart:get')r={ok:true,config:stateToConfig(ST),steps:[],warnings:[]};
- if(r&&e.source){try{e.source.postMessage({type:'sixmart:state',...r},'*');}catch(err){}}});
+ let r=null,type='sixmart:state';if(d.type==='sixmart:apply')r=applyConfig(d.config||{});else if(d.type==='sixmart:get')r={ok:true,config:stateToConfig(ST),steps:[],warnings:[]};
+ else if(d.type==='sixmart:riff'){r=applyRiff(d.riff||d.config||{});type='sixmart:riffstate';}
+ if(r&&e.source){try{e.source.postMessage({type,...r},'*');}catch(err){}}});
 
 applyState();setVB(boxView(full(),20));renderOverview();
 {const h=location.hash.slice(1),cfg=configFromURL();
- if(cfg)applyConfig(cfg,{instant:true});else if(h==='api')showApi();else if(PARTS[h])select(h,true);}
+ if(cfg)route(cfg,{instant:true});else if(h==='api')showApi();else if(PARTS[h])select(h,true);}
 addEventListener('hashchange',()=>{const h=location.hash.slice(1);
- if(h.includes('='))applyConfig(configFromURL()||{});else if(h==='api')showApi();else if(PARTS[h]&&h!==current)select(h);});
+ if(h.includes('='))route(configFromURL()||{});else if(h==='api')showApi();else if(PARTS[h]&&h!==current)select(h);});
 </script>
 </body>
 </html>
