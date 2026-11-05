@@ -64,6 +64,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .sound{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:6px}
 .sound b{display:block;margin-bottom:2px}
 textarea{width:100%;min-height:80px;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:10px;padding:10px;font:inherit;resize:vertical}
+.adj{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:var(--chip)}
+.adj-h{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}.adj-h span{color:var(--accent);font-size:13px;font-weight:600}
+.adj ol{margin:8px 0 0;padding-left:18px}.adj li{margin:3px 0}
+svg.dg{width:100%;height:auto;display:block;border-radius:8px;background:var(--panel);font:10.5px system-ui,sans-serif;fill:var(--ink)}
+.dg .wood{fill:#d9b26c}.dg .board{fill:#2a2624}.dg .guard{fill:#151517}.dg .pu{fill:#26262b;stroke:#4a4a52}.dg .metal{fill:#9aa0a6;stroke:#5b6066;stroke-width:.6}
+.dg .saddle{fill:#2c2c30;stroke:#55555c}.dg .nut{fill:#efe9dc;stroke:#b5ab96}.dg .screw{fill:#3a3a40;stroke:#8e9297;stroke-width:.8}.dg .skin{fill:#e8b89a}
+.dg .str{stroke:#bfc3c7;stroke-width:1.8;fill:none}.dg .spring{stroke:#8e9297;stroke-width:1.6;fill:none}.dg .cavity{fill:#111;opacity:.85}
+.dg .acc{stroke:var(--accent);fill:var(--accent);stroke-width:1.6}.dg text.acc{stroke:none;font-weight:700}.dg text.dim{fill:var(--muted)}.dg line.acc{fill:none}
+.order{display:grid;gap:6px}.order button{text-align:left;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:10px;padding:8px 12px;font:inherit;cursor:pointer}.order button:hover{border-color:var(--accent)}
 .back{background:none;border:0;color:var(--accent);cursor:pointer;padding:0;font:inherit;margin-bottom:10px}
 .foot{color:var(--muted);font-size:12px;margin-top:26px;border-top:1px solid var(--line);padding-top:12px}
 .foot a{color:inherit}
@@ -339,22 +348,21 @@ const S={spec:'listing',photo:'photo',ref:'reference',inferred:'inferred'};
 const SPEC_URL='https://avlgear.com/products/tagima-sixmart-electric-guitar-with-maple-neck-and-basswood-body';
 const TUNING=[['6 · E2','82.41 Hz'],['5 · A2','110.00 Hz'],['4 · D3','146.83 Hz'],['3 · G3','196.00 Hz'],['2 · B3','246.94 Hz'],['1 · E4','329.63 Hz']];
 const fretMM=n=>(648*(1-Math.pow(2,-n/12))).toFixed(1)+' mm';
-const PU_HEIGHT=(sc)=>sc?[['Height, bass side','2.4 mm (6/64")','ref','Press the string at the last fret. Measure from the bottom of the string to the top of the pole piece.'],['Height, treble side','2.0 mm (5/64")','ref','Too close gives a weak, wavy sustain on single coils. Too far gives a thin sound.']]
- :[['Height, bass side','1.6 mm (4/64")','ref','Press the string at the last fret and measure.'],['Height, treble side','1.6 mm (4/64")','ref','Humbuckers sit closer than single coils.']];
+const PU_HEIGHT=()=>[];
 
 const PARTS={
  headstock:{name:'Headstock',group:'Neck',what:'Strat-style headstock with all six tuners on the bass side.',specs:[['Wood','Maple, natural finish','photo'],['Size','90 × 185 mm from the nut','photo'],['Logo','Tagima script and "SIXMART"','photo']],setup:[['Care','Wipe with a dry cloth after you play','ref']]},
- tuners:{name:'Tuners',group:'Neck',what:'Six diecast machine heads in a line. The black pegs stick out of the bass side.',specs:[['Type','Diecast','spec'],['Finish','Black','photo']],setup:[['Wraps on the post','2–3 on wound strings, 3–5 on plain strings','ref','Too many wraps can make the tuning slip.'],['Turn direction','Turn the peg away from you to lower the pitch','ref']],tuning:true},
+ tuners:{name:'Tuners',group:'Neck',what:'Six diecast machine heads in a line. The black pegs stick out of the bass side.',specs:[['Type','Diecast','spec'],['Finish','Black','photo']],setup:[],adjust:['wind'],tuning:true},
  stringtree:{name:'String tree',group:'Neck',what:'Holds the B and high E strings down so they press on the nut with enough angle.',specs:[['Strings','B and high E','photo']],setup:[['If the strings ping while tuning','Put a little graphite (pencil lead) under the tree','ref']]},
- nut:{name:'Nut',group:'Neck',what:'The slotted piece at the end of the fretboard. It sets the string spacing and the height at the first frets.',specs:[['Width','43 mm (1.69")','spec']],setup:[['String height at fret 1','≈ 0.5 mm treble / 0.6 mm bass','ref','Press the string at fret 3 and look at the gap over fret 1. Almost touching is correct.'],['Sticking strings','Graphite in the slots','ref']]},
+ nut:{name:'Nut',group:'Neck',what:'The slotted piece at the end of the fretboard. It sets the string spacing and the height at the first frets.',specs:[['Width','43 mm (1.69")','spec']],setup:[['Sticking strings','Graphite (pencil lead) in the slots','ref']],adjust:['nut']},
  fretboard:{name:'Fretboard',group:'Neck',what:'The dark playing surface with dot markers at frets 3, 5, 7, 9, 12 (double), 15, 17, 19 and 21.',specs:[['Material','Techwood','spec'],['Radius','9.5" (241 mm)','spec'],['Scale length','25.5" (648 mm)','spec'],['Profile','C shape','spec']],setup:[['Cleaning','Dry cloth after each session. Light conditioner when you change strings','ref']]},
  frets:{name:'Frets',group:'Neck',what:'22 fret wires. Each fret raises the pitch by one semitone. The distances follow the 12th-root-of-2 rule.',specs:[['Count','22','spec'],['Fret 1 from nut',fretMM(1),'inferred'],['Fret 5 from nut',fretMM(5),'inferred'],['Fret 12 from nut',fretMM(12)+' (half the scale)','inferred'],['Fret 22 from nut',fretMM(22),'inferred']],setup:[['Buzz on one fret only','A high fret. Have a tech level it','ref']]},
- neck:{name:'Neck',group:'Neck',what:'Bolt-on maple neck. A steel truss rod inside it holds against the string tension.',specs:[['Wood','Maple','spec'],['Shape','C','spec']],setup:[['Relief','0.25 mm (0.010")','ref','Put a capo at fret 1, press at the last fret, measure the gap at fret 8.'],['Truss rod','Quarter turn at a time. Clockwise = less relief','ref','Look for the adjust hole at the headstock end or at the neck heel. Wait a few hours after each turn.']]},
+ neck:{name:'Neck',group:'Neck',what:'Bolt-on maple neck. A steel truss rod inside it holds against the string tension.',specs:[['Wood','Maple','spec'],['Shape','C','spec']],setup:[],adjust:['relief','truss']},
  body:{name:'Body',group:'Body',what:'Double-cutaway solid body in a sparkle finish.',specs:[['Wood','Basswood','spec'],['Size','319 × 466 mm, horn tip to bottom','photo','Measured on the flat photo, scaled by the 25.5" scale length. Strat reference: 324 mm wide, about 460 mm long.'],['Finish','Sparkling Candy Apple','spec'],['Other color','Metallic Deep Silver','spec']],setup:[['Care','Microfiber cloth. Do not use household cleaners on the finish','ref']]},
  pickguard:{name:'Pickguard',group:'Body',what:'Black pickguard with a white edge line. It holds the pickups, the selector and the controls.',specs:[['Color','Black','spec'],['Size','218 × 273 mm','photo'],['Edge','White ply line','photo']],setup:[]},
- neckpu:{name:'Neck pickup',group:'Pickups',what:'Single coil next to the neck. Warm and round sound.',specs:[['Type','Single coil','spec'],['Selector','Position 5','inferred']],setup:PU_HEIGHT(true)},
- midpu:{name:'Middle pickup',group:'Pickups',what:'Single coil in the middle. Thin and clear alone, "quacky" in combinations.',specs:[['Type','Single coil','spec'],['Selector','Position 3','inferred']],setup:PU_HEIGHT(true)},
- bridgepu:{name:'Bridge humbucker',group:'Pickups',what:'Double coil next to the bridge. The most output and the least hum. Best for overdrive and distortion.',specs:[['Type','Humbucker','spec'],['Selector','Position 1','inferred']],setup:PU_HEIGHT(false)},
+ neckpu:{name:'Neck pickup',group:'Pickups',what:'Single coil next to the neck. Warm and round sound.',specs:[['Type','Single coil','spec'],['Selector','Position 5','inferred']],setup:[],adjust:['pu_sc']},
+ midpu:{name:'Middle pickup',group:'Pickups',what:'Single coil in the middle. Thin and clear alone, "quacky" in combinations.',specs:[['Type','Single coil','spec'],['Selector','Position 3','inferred']],setup:[],adjust:['pu_sc']},
+ bridgepu:{name:'Bridge humbucker',group:'Pickups',what:'Double coil next to the bridge. The most output and the least hum. Best for overdrive and distortion.',specs:[['Type','Humbucker','spec'],['Selector','Position 1','inferred']],setup:[],adjust:['pu_hb']},
  selector:{name:'Pickup selector',group:'Electronics',what:'5-way lever that selects which pickups play.',specs:[['Positions','5','spec'],['1 (toward bridge)','Bridge humbucker','inferred'],['2','Bridge + middle (wiring varies, often coil split)','inferred'],['3','Middle','inferred'],['4','Middle + neck','inferred'],['5 (toward neck)','Neck','inferred']],setup:[],ctl:'selector'},
  volume:{name:'Volume · push-pull',group:'Electronics',what:'Master volume. Pull the knob up to turn the built-in effects on. Push it down for a plain guitar signal.',specs:[['Label','"PUSH PULL / EFFECTS ON / VOLUME"','photo']],setup:[],ctl:'volume'},
  fxtoggle:{name:'Effect mode switch',group:'Electronics',what:'3-way mini toggle that sets the drive of the built-in effects.',specs:[['Positions','DIST · CLEAN · OVER','photo'],['DIST','Distortion','spec'],['OVER','Overdrive','spec'],['CLEAN','No drive. Delay and reverb still work','inferred']],setup:[],ctl:'mode'},
@@ -364,8 +372,8 @@ const PARTS={
  recjack:{name:'Rec out / Audio in',group:'Electronics',what:'3.5 mm jack labeled OUT REC and IN AUDIO: record to a phone or computer, or play a backing track through the guitar.',specs:[['Size','3.5 mm (P2)','inferred'],['Labels','OUT REC · IN AUDIO','photo']],setup:[['Use','Connect a TRRS phone cable for record + playback','inferred']]},
  phones:{name:'Headphone out',group:'Electronics',what:'3.5 mm headphone jack. Practice in silence with the effects, without an amp.',specs:[['Size','3.5 mm','inferred'],['Listing','"Headphone output"','spec']],setup:[['Tip','Start with the volume low before you put the headphones on','ref']]},
  output:{name:'Output jack',group:'Electronics',what:'Main 6.35 mm (1/4") output to an amplifier or pedalboard.',specs:[['Size','6.35 mm (P10)','ref'],['Plate','Black oval','photo']],setup:[['Unplug when done','Many active circuits use power while a cable is in the jack','ref']]},
- bridge:{name:'Tremolo bridge',group:'Hardware',what:'Black synchronized tremolo with six adjustable saddles. The arm bends the pitch down (and up, if the bridge floats).',specs:[['Type','Tremolo','spec'],['Finish','Black','photo']],setup:[['Action at fret 12','1.6 mm treble / 1.8–2.0 mm bass','ref','Measure from the top of the fret to the bottom of the string.'],['Intonation','12th-fret harmonic = fretted note','ref','Fretted note sharp: move the saddle back (away from the neck). Flat: move it forward.'],['Float','≈ 3.2 mm (1/8") gap at the back of the plate, or fully decked','ref','Adjust with the spring-claw screws in the back cavity.']]},
- strings:{name:'Strings',group:'Hardware',what:'Six steel strings. Three wound (E, A, D) and three plain (G, B, E).',specs:[['Tuning','E standard, A = 440 Hz','ref'],['Gauge','09–42 or 10–46 are common on this style','ref','Check the packet of your current set.']],setup:[['Change','Every 1–3 months, or when they sound dull','ref']],tuning:true},
+ bridge:{name:'Tremolo bridge',group:'Hardware',what:'Black synchronized tremolo with six adjustable saddles. The arm bends the pitch down (and up, if the bridge floats).',specs:[['Type','Tremolo','spec'],['Finish','Black','photo']],setup:[],adjust:['action','intonation','float']},
+ strings:{name:'Strings',group:'Hardware',what:'Six steel strings. Three wound (E, A, D) and three plain (G, B, E).',specs:[['Tuning','E standard, A = 440 Hz','ref'],['Gauge','09–42 or 10–46 are common on this style','ref','Check the packet of your current set.']],setup:[['Change','Every 1–3 months, or when they sound dull','ref']],adjust:['wind'],tuning:true},
  strap:{name:'Strap buttons',group:'Hardware',what:'One on the upper horn and one at the bottom of the body.',specs:[['Count','2','photo']],setup:[['Tip','Strap locks stop the guitar from falling','ref']]},
  ctlplate:{name:'Control plate',group:'Electronics',what:'Clear Sixmart plate printed with the names of the electronic controls.',specs:[['Brand','SIXMART · Tagima','photo']],setup:[]},
 };
@@ -398,6 +406,72 @@ function soundText(){
  return `<b>Effects on · ${MODENAME[ST.mode]}</b>${pu} · volume ${ST.vol} · tone ${ST.tone}<br>Delay ${ST.delay} · reverb ${ST.reverb}`;
 }
 
+/* ---------- adjustment diagrams ---------- */
+const DG={
+ open:'<svg class="dg" viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">',
+ close:'</svg>',
+ t:(x,y,s,o='')=>`<text x="${x}" y="${y}" ${o}>${s}</text>`,
+ arrow:(x1,y1,x2,y2,c='acc')=>`<line class="${c}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#ah)" marker-start="url(#ah)"/>`,
+ defs:'<defs><marker id="ah" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L6 3L0 6Z" fill="var(--accent)"/></marker><marker id="ah1" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L6 3L0 6Z" fill="var(--accent)"/></marker></defs>',
+ frets:(x0,x1,n,fy,h=6)=>Array.from({length:n},(_,i)=>{const x=x0+(x1-x0)*i/(n-1);return `<rect class="metal" x="${x-1.5}" y="${fy(x)-h}" width="3" height="${h}" rx="1"/>`;}).join(''),
+};
+const ADJ={
+ relief:{title:'Neck relief',value:'0.25 mm (0.010") at fret 8',steps:['Tune to pitch. Hold the guitar in playing position.','Put a capo at fret 1. Press the low E at the last fret.','Look at the gap between the string and the top of fret 8. Use a 0.25 mm feeler gauge, or slide a business card: it should just drag.','Too big a gap: tighten the truss rod. No gap (string touches fret 8): loosen it. See Truss rod.'],
+  svg:()=>DG.open+DG.defs+
+   `<path class="wood" d="M20 100Q160 118 300 100L300 128Q160 146 20 128Z"/><path class="board" d="M20 92Q160 110 300 92L300 100Q160 118 20 100Z"/>`+
+   DG.frets(28,292,16,x=>92+18*(1-Math.pow((x-160)/140,2)))+
+   `<line class="str" x1="34" y1="78" x2="286" y2="78"/><rect class="metal" x="26" y="60" width="14" height="48" rx="3"/><circle class="skin" cx="286" cy="70" r="9"/>`+
+   DG.arrow(160,80,160,102)+DG.t(168,96,'0.25 mm','class="acc"')+
+   DG.t(22,52,'capo · fret 1')+DG.t(226,52,'press last fret')+DG.t(128,142,'measure at fret 8')+DG.close},
+ truss:{title:'Truss rod',value:'¼ turn at a time, wait a few hours',steps:['Find the adjustment nut: at the headstock end under the cover or at the heel of the neck.','Clockwise tightens the rod: the neck gets straighter, less relief.','Counter-clockwise loosens it: more relief (the neck bows forward).','Turn no more than ¼ turn, retune, wait, then measure again. If it feels stuck, stop and see a tech.'],
+  svg:()=>DG.open+DG.defs+
+   `<path class="wood" d="M120 10L200 10Q230 12 230 50Q230 100 200 110L120 110Q90 100 90 50Q90 12 120 10Z"/><circle class="board" cx="160" cy="60" r="22"/><polygon class="metal" points="160,46 172,53 172,67 160,74 148,67 148,53"/>`+
+   `<path class="acc" fill="none" stroke-width="2.5" d="M160 26A34 34 0 0 1 194 60" marker-end="url(#ah1)"/><path class="acc" fill="none" stroke-width="2.5" d="M160 94A34 34 0 0 1 126 60" marker-end="url(#ah1)"/>`+
+   DG.t(238,30,'clockwise',' class="acc"')+DG.t(238,44,'tighten')+DG.t(238,56,'straighter neck')+DG.t(238,68,'less relief')+
+   DG.t(8,126,'counter-clockwise',' class="acc"')+DG.t(8,140,'loosen · more relief')+DG.t(170,140,'¼ turn, then wait',' class="dim"')+DG.close},
+ action:{title:'String height (action)',value:'1.6 mm treble · 1.8–2.0 mm bass, at fret 12',steps:['Set relief first. Action changes when the relief changes.','Measure from the top of fret 12 to the bottom of the string, with the string open.','Each saddle has two small hex screws. Turn both the same amount: clockwise raises the saddle, counter-clockwise lowers it.','Check for buzz across the whole neck after each change.'],
+  svg:()=>DG.open+DG.defs+
+   `<rect class="wood" x="20" y="106" width="220" height="24"/><rect class="board" x="20" y="98" width="220" height="8"/>`+DG.frets(30,230,12,()=>98,5)+
+   `<rect class="metal" x="128" y="88" width="4" height="10" rx="1"/><line class="str" x1="20" y1="74" x2="262" y2="70"/>`+
+   `<rect class="metal" x="248" y="66" width="30" height="22" rx="3"/><circle class="screw" cx="255" cy="88" r="3"/><circle class="screw" cx="271" cy="88" r="3"/><rect class="wood" x="240" y="96" width="60" height="34"/>`+
+   DG.arrow(130,76,130,88)+DG.t(138,84,'1.6 / 2.0 mm',' class="acc"')+DG.t(112,142,'fret 12')+DG.t(196,54,'saddle screws')+DG.t(196,42,'↻ raise · ↺ lower',' class="acc"')+DG.close},
+ intonation:{title:'Intonation',value:'12th-fret harmonic = fretted 12th-fret note',steps:['Set relief, action and new strings first. Tune to pitch.','Play the harmonic at fret 12, then fret the note at fret 12. Compare them on a tuner.','Fretted note sharp: move the saddle back, away from the neck. Turn the screw at the back of the bridge clockwise.','Fretted note flat: move the saddle forward. Turn the screw counter-clockwise.','Retune and repeat for each string.'],
+  svg:()=>DG.open+DG.defs+
+   `<rect class="metal" x="30" y="30" width="200" height="90" rx="6"/>`+[0,1,2,3,4,5].map(i=>`<rect class="saddle" x="${50+i*30}" y="${56-i*2}" width="20" height="28" rx="3"/><line class="str" x1="${60+i*30}" y1="8" x2="${60+i*30}" y2="${56-i*2}"/><circle class="screw" cx="${60+i*30}" cy="112" r="3.5"/>`).join('')+
+   `<path class="acc" fill="none" stroke-width="2.5" d="M150 88L150 104" marker-end="url(#ah1)"/><path class="acc" fill="none" stroke-width="2.5" d="M150 50L150 34" marker-end="url(#ah1)"/>`+
+   DG.t(240,16,'↑ neck',' class="dim"')+DG.t(240,44,'sharp:',' class="acc"')+DG.t(240,56,'saddle back')+DG.t(240,96,'flat:',' class="acc"')+DG.t(240,108,'saddle forward')+DG.t(30,142,'back screw clockwise = saddle back')+DG.close},
+ pu_sc:{title:'Pickup height · single coils',value:'2.4 mm bass · 2.0 mm treble',steps:['Press the outer string at the last fret.','Measure from the bottom of the string to the top of the pole piece.','The two screws at the ends set the height: clockwise raises the pickup, counter-clockwise lowers it.','Too close: the sound gets harsh and the sustain warbles. Too far: thin and weak.'],
+  svg:()=>DG.open+DG.defs+
+   `<rect class="guard" x="20" y="100" width="280" height="30"/><rect class="board" x="20" y="96" width="60" height="4"/><rect class="pu" x="120" y="84" width="120" height="30" rx="4"/><rect class="metal" x="176" y="78" width="8" height="12" rx="2"/>`+
+   `<circle class="screw" cx="128" cy="92" r="4"/><circle class="screw" cx="232" cy="92" r="4"/><circle class="skin" cx="70" cy="80" r="8"/><line class="str" x1="60" y1="92" x2="300" y2="60"/>`+
+   DG.arrow(180,66,180,78)+DG.t(172,70,'2.4 / 2.0 mm',' class="acc" text-anchor="end"')+DG.t(22,60,'press last fret')+DG.t(250,96,'↻ raise',' class="acc"')+DG.t(150,146,'end screws set the height',' class="acc"')+DG.close},
+ pu_hb:{title:'Pickup height · humbucker',value:'1.6 mm both sides',steps:['Press the outer string at the last fret.','Measure from the bottom of the string to the top of the pole piece.','The two ring screws set the height: clockwise raises, counter-clockwise lowers.','A humbucker sits closer than a single coil; it has less pull on the string.'],
+  svg:()=>DG.open+DG.defs+
+   `<rect class="guard" x="20" y="100" width="280" height="30"/><rect class="board" x="20" y="96" width="60" height="4"/><rect class="pu" x="110" y="80" width="140" height="34" rx="4"/><rect class="metal" x="160" y="74" width="8" height="12" rx="2"/><rect class="metal" x="196" y="74" width="8" height="12" rx="2"/>`+
+   `<circle class="screw" cx="118" cy="92" r="4"/><circle class="screw" cx="242" cy="92" r="4"/><circle class="skin" cx="70" cy="80" r="8"/><line class="str" x1="60" y1="92" x2="300" y2="58"/>`+
+   DG.arrow(164,64,164,74)+DG.t(156,68,'1.6 mm',' class="acc" text-anchor="end"')+DG.t(22,60,'press last fret')+DG.t(258,96,'↻ raise',' class="acc"')+DG.t(150,146,'ring screws set the height',' class="acc"')+DG.close},
+ float:{title:'Tremolo float',value:'≈ 3 mm gap at the back of the plate, or fully decked',steps:['The bridge pivots on the six screws at the front. Three springs in the back cavity pull it down; the strings pull it up.','Tighten the two claw screws in the back cavity: more spring pull, the bridge drops toward the body (decked = tuning is more stable).','Loosen them: the bridge rises and floats (the arm can pull the pitch up).','Change ¼ turn at a time, retune, then look at the gap again.'],
+  svg:()=>DG.open+DG.defs+
+   `<rect class="wood" x="20" y="90" width="280" height="50"/><rect class="guard" x="20" y="86" width="100" height="4"/><rect class="cavity" x="150" y="100" width="140" height="34"/>`+
+   `<path class="metal" d="M110 70L230 64L232 78L110 86Z"/><circle class="screw" cx="118" cy="78" r="3.5"/><rect class="metal" x="226" y="58" width="6" height="28"/>`+
+   `<rect class="metal" x="270" y="104" width="10" height="26"/><circle class="screw" cx="286" cy="110" r="3"/><circle class="screw" cx="286" cy="124" r="3"/>`+
+   `<path class="spring" d="M232 110l6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4"/><path class="spring" d="M232 102l8 0 0 6"/><line class="spring" x1="238" y1="114" x2="270" y2="114"/>`+
+   DG.arrow(236,80,236,90)+DG.t(242,86,'3 mm',' class="acc"')+DG.t(60,56,'pivot screws')+DG.t(240,56,'gap',' class="dim"')+DG.t(20,148,'claw screws (back cavity): ↻ tighter = bridge lower',' class="acc"')+DG.close},
+ nut:{title:'Nut slot height',value:'≈ 0.5 mm treble · 0.6 mm bass, open string over fret 1',steps:['Measure from the top of fret 1 to the bottom of the open string.','Quick check: press the string at fret 3. It should just clear fret 1 by a hair.','Slots too high: the first frets play sharp and feel stiff. Too low: open strings buzz.','Lowering a slot needs nut files. Raising needs a shim or a new nut: a tech job.'],
+  svg:()=>DG.open+DG.defs+
+   `<rect class="wood" x="20" y="100" width="280" height="36"/><rect class="board" x="60" y="90" width="240" height="10"/><rect class="nut" x="36" y="56" width="24" height="44" rx="2"/>`+DG.frets(100,280,5,()=>90,8)+
+   `<line class="str" x1="36" y1="62" x2="300" y2="70"/><circle class="skin" cx="190" cy="52" r="8"/>`+DG.arrow(100,66,100,82)+DG.t(110,120,'0.5 / 0.6 mm at fret 1',' class="acc"')+DG.t(92,148,'fret 1')+DG.t(30,48,'nut')+DG.t(176,40,'fret 3: press to test',' class="dim"')+DG.close},
+ wind:{title:'Winding the strings',value:'2–3 wraps on wound strings, 3–5 on plain',steps:['Pull the string through the post, leave slack of about one and a half posts, then bend it.','Wind downward: each wrap goes under the one before, so the string leaves the post low, close to the headstock.','The string leaves the post on the inside, toward the centre of the headstock. Seen from the front, the post turns clockwise as you tune up.','Stretch each string by pulling it gently away from the fretboard, retune, repeat until it holds.'],
+  svg:()=>DG.open+DG.defs+
+   `<rect class="wood" x="20" y="14" width="190" height="122" rx="8"/><circle class="metal" cx="100" cy="70" r="24"/><rect class="screw" x="92" y="66" width="16" height="8" rx="2"/>`+
+   `<path class="str" d="M30 130L80 86"/><path class="str" d="M80 86A24 24 0 1 1 124 70"/><path class="str" d="M124 70L124 136"/>`+
+   `<path class="acc" fill="none" stroke-width="2.5" d="M70 40A40 40 0 0 1 134 46" marker-end="url(#ah1)"/>`+
+   `<rect class="metal" x="250" y="30" width="18" height="90" rx="3"/>`+[0,1,2].map(i=>`<ellipse class="str" cx="259" cy="${62+i*12}" rx="12" ry="4"/>`).join('')+
+   DG.t(150,34,'tune up',' class="acc"')+DG.t(142,100,'leaves on the inside')+DG.t(142,112,'toward the centre')+DG.t(22,146,'from the nut',' class="dim"')+DG.t(224,22,'side view',' class="dim"')+DG.t(228,136,'wraps go down',' class="dim"')+DG.close},
+};
+const SETUP_ORDER=[['strings','1 · New strings and tuning'],['neck','2 · Neck relief'],['bridge','3 · Action at fret 12'],['nut','4 · Nut slot height'],['neckpu','5 · Pickup height'],['bridge','6 · Intonation'],['bridge','7 · Tremolo float']];
+function adjHTML(keys){return keys.map(k=>{const a=ADJ[k];return `<div class="adj"><div class="adj-h"><b>${esc(a.title)}</b><span>${esc(a.value)}</span></div>${a.svg()}<ol>${a.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div>`;}).join('');}
+
 /* ---------- panel ---------- */
 const panel=document.getElementById('panel');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -421,13 +495,15 @@ function renderOverview(){
  <h2>Current sound</h2><div class="sound" id="sound">${soundText()}</div>
  <h2>Parts</h2>${byG}
  <h2>Specs</h2>${rows([['Body','Basswood','spec'],['Neck','Maple, C shape','spec'],['Fretboard','Techwood, 22 frets, 9.5" radius','spec'],['Scale','25.5" (648 mm)','spec'],['Nut','43 mm','spec'],['Pickups','Humbucker + 2 single coils (HSS)','spec'],['Bridge','Tremolo','spec'],['Tuners','Diecast','spec'],['Effects','Overdrive, distortion, delay, reverb','spec'],['Outputs','6.35 mm, headphones, rec out / audio in','photo']])}
+ <h2>Setup order</h2><div class="order">${SETUP_ORDER.map(([k,l])=>`<button data-go="${k}">${l}</button>`).join('')}</div>
  <h2>Quick setup reference</h2>${rows([['Tuning','E standard, A = 440 Hz','ref'],['Neck relief','0.25 mm at fret 8','ref'],['Action (fret 12)','1.6 mm treble / 1.8–2.0 mm bass','ref'],['Pickup height','SC 2.4 / 2.0 mm · HB 1.6 mm','ref']])}${foot()}`;}
 function renderPart(key){
  const p=PARTS[key];
  panel.innerHTML=`<button class="back" data-home>← Whole guitar</button><h1>${esc(p.name)}</h1><p class="sub">${p.group}</p><p class="what">${esc(p.what)}</p>
  ${p.ctl?`<h2>Setting</h2>${ctlHTML(p.ctl)}<div class="sound" id="sound">${soundText()}</div>`:''}
  ${p.specs.length?`<h2>Specs</h2>${rows(p.specs)}`:''}
- ${p.setup.length?`<h2>Setup</h2>${rows(p.setup)}`:''}
+ ${p.adjust?`<h2>Adjustments</h2>${adjHTML(p.adjust)}`:''}
+ ${p.setup.length?`<h2>Setup notes</h2>${rows(p.setup)}`:''}
  ${p.tuning?`<h2>Standard tuning</h2>${rows(TUNING.map(([a,b])=>[a,b,'ref']))}`:''}
  ${notesHTML(key)}${foot()}`;}
 panel.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
