@@ -243,18 +243,28 @@ single('neckpu',875); single('midpu',951);
  el('rect',{x:CX-42,y:y-20.5,width:84,height:41,rx:5,fill:'#000',opacity:.6,transform:'translate(1 1.5)'},g);el('rect',{x:CX-42,y:y-20.5,width:84,height:41,rx:5,fill:'url(#puGrad)',stroke:'#46464c','stroke-width':.7},g);
  el('rect',{x:CX-39,y:y-18,width:78,height:16,rx:2.5,fill:'#1b1b1f',stroke:'#3a3a40','stroke-width':.5},g);
  el('rect',{x:CX-39,y:y+2,width:78,height:16,rx:2.5,fill:'#1b1b1f',stroke:'#3a3a40','stroke-width':.5},g);
- poles(g,y-12); poles(g,y+12);
+ poles(g,y-12); poles(g,y+12); for(let i=0;i<6;i++){const x=strX(i,y+12);el('line',{x1:x-1.3,y1:y+12-1.3,x2:x+1.3,y2:y+12+1.3,stroke:'#2a2a2e','stroke-width':.55},g);}
  screw(g,CX-46,y,2,'#111'); screw(g,CX+46,y,2,'#111');}
 
 /* ---------- control plate (clear Sixmart sticker) ---------- */
 const VOL={x:387,y:1022,r:12}, TONE={x:425,y:1060,r:12}, DR={x:465,y:1098}, TOG={x:414,y:1033}, LED={x:402,y:1048};
 const SEL={x:423,y:1001,dx:.63,dy:.78,len:42};
 const RJ={x:450,y:1066},PJ={x:438,y:1081};
+let pl,plt,tick,plateG;const ALONG=51,ACROSS=-39; // label rotations: ALONG reads toward the delay knob (tops toward the selector side); ACROSS reads across the plate (tops toward the logo tab)
 {const cp=el('clipPath',{id:'guardClip'},document.querySelector('#guitar defs'));el('path',{d:GUARD,transform:'translate(300 1000) scale(.985) translate(-300 -1000)'},cp);
- const g=part('ctlplate');g.setAttribute('clip-path','url(#guardClip)');
- const PL=`M${VOL.x-16} ${VOL.y-12}L${VOL.x+12} ${VOL.y-18}L${TOG.x+12} ${TOG.y-10}L${RJ.x+10} ${RJ.y-8}L${DR.x+8} ${DR.y-14}L${DR.x+10} ${DR.y+8}L${DR.x-8} ${DR.y+14}L${PJ.x-6} ${PJ.y+8}L${TONE.x-14} ${TONE.y+4}L${LED.x-10} ${LED.y+8}L${VOL.x-18} ${VOL.y+8}Z`;el('path',{d:PL,fill:'#202227',stroke:'#202227','stroke-width':10,'stroke-linejoin':'round'},g);el('path',{d:PL,fill:'none',stroke:'#c9d0da','stroke-opacity':.3,'stroke-width':11,'stroke-linejoin':'round'},g);el('path',{d:PL,fill:'#202227',stroke:'#202227','stroke-width':9.4,'stroke-linejoin':'round'},g);
- const t=el('text',{'font-family':'system-ui,sans-serif','font-size':4.6,'font-weight':300,'letter-spacing':1,fill:'#d7dce4',transform:`translate(${VOL.x-22} ${VOL.y-11}) rotate(-38)`},g);t.textContent='SIXMART';
- const t2=el('text',{'font-family':'Yellowtail,cursive','font-size':4.4,fill:'#d7dce4',transform:`translate(${VOL.x-18} ${VOL.y-7}) rotate(-38)`},g);t2.textContent='Tagima';
+ const g=part('ctlplate');g.setAttribute('clip-path','url(#guardClip)');plateG=g;
+ const PD={x:.628,y:.778},PN={x:.778,y:-.628};pl=(u,v)=>[VOL.x+u*PD.x+v*PN.x,VOL.y+u*PD.y+v*PN.y];
+ const CR=[180,202.5,225,247.5,270].map(a=>[-2.4+8*Math.cos(a*Math.PI/180),-31.6+8*Math.sin(a*Math.PI/180)]);
+ const PPTS=[...CR,[24,-39.6],[24,-11],[10.4,23],[35,50.6],[39,77],[37.6,99],[24,124],[-8,124],[-16,99],[-15,46],[-10.4,22],[-10.4,-11]];
+ const PL='M'+PPTS.map(([v,u])=>pl(u,v).map(c=>c.toFixed(1)).join(' ')).join('L')+'Z';
+ el('path',{d:PL,fill:'#2a2c31',stroke:'#2a2c31','stroke-width':5,'stroke-linejoin':'round','fill-opacity':.9,'stroke-opacity':.9},g);
+ el('path',{d:PL,fill:'none',stroke:'#d5dbe4','stroke-opacity':.3,'stroke-width':.6,'stroke-linejoin':'round'},g);
+ plt=(u,v,txt,size,rot,o={})=>{const [x,y]=pl(u,v);const t=el('text',Object.assign({'font-family':'system-ui,sans-serif','font-size':size,'font-weight':700,fill:'#e9edf2','text-anchor':'middle','letter-spacing':.06,transform:`translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot})`},o),g);t.textContent=txt;t.setAttribute('pointer-events','none');return t;};
+ tick=(u,v0,v1)=>{const a=pl(u,v0),b=pl(u,v1);el('line',{x1:a[0].toFixed(1),y1:a[1].toFixed(1),x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:'#e9edf2','stroke-width':.5,'stroke-linecap':'round'},g);};
+ // SIXMART logo: wide single-stroke letters, reading across the tab
+ const GL={S:[[[1,0],[0,0],[0,.5],[1,.5],[1,1],[0,1]]],I:[[[.5,0],[.5,1]]],X:[[[0,0],[1,1]],[[1,0],[0,1]]],M:[[[0,1],[0,0],[.5,.62],[1,0],[1,1]]],A:[[[0,1],[.5,0],[1,1]],[[.2,.62],[.8,.62]]],R:[[[0,1],[0,0],[.82,0],[1,.16],[1,.4],[.82,.56],[0,.56]],[[.55,.56],[1,1]]],T:[[[0,0],[1,0]],[[.5,0],[.5,1]]]};
+ {let v=-7.2;const h=3.4,w=3.6,gap=.95,ub=-29.4;for(const ch of 'SIXMART'){const cw=w*(ch==='I'?.3:1);for(const seg of GL[ch]){el('polyline',{points:seg.map(([gx,gy])=>pl(ub-h+gy*h,v+gx*cw).map(c=>c.toFixed(2)).join(',')).join(' '),fill:'none',stroke:'#e9edf2','stroke-width':.34,'stroke-linecap':'round','stroke-linejoin':'round'},g);}v+=cw+gap;}}
+ plt(-23,-5.2,'Tagima',3.9,ACROSS,{'font-family':"'Snell Roundhand','Brush Script MT','Apple Chancery',cursive",'font-weight':400,'font-style':'italic','text-anchor':'start','letter-spacing':0});
 }
 function label(txt,x,y,size=2.6,rot=-38,anchor='start'){const t=el('text',{'font-family':'system-ui,sans-serif','font-size':size,'font-weight':700,fill:'#e9edf2','text-anchor':anchor,transform:`translate(${x} ${y}) rotate(${rot})`},world);t.textContent=txt;t.setAttribute('pointer-events','none');return t;}
 
@@ -272,13 +282,17 @@ function knob(g,cx,cy,r){
 const parts={};
 {const g=part('volume'); parts.volRing=el('circle',{cx:VOL.x,cy:VOL.y,r:VOL.r+3,fill:'none',stroke:'url(#chrome)','stroke-width':1.6,opacity:0},g);
  parts.vol=knob(g,VOL.x,VOL.y,VOL.r);}
-label('PUSH PULL',VOL.x+1,VOL.y-16,1.8); label('EFFECTS ON',VOL.x+2,VOL.y-13.3,1.8); label('VOLUME',VOL.x+9.5,VOL.y-11,2);
-{const g=part('tone'); parts.tone=knob(g,TONE.x,TONE.y,TONE.r);} label('TONE',TONE.x+10,TONE.y-15,2.4);
+
+{const g=part('tone'); parts.tone=knob(g,TONE.x,TONE.y,TONE.r);}
 {const g=part('delayreverb');
- el('path',{d:`M${DR.x-18} ${DR.y-3.5}A18 18 0 0 1 ${DR.x+12} ${DR.y-13.5}L${DR.x+9} ${DR.y-10}A13.5 13.5 0 0 0 ${DR.x-13.4} ${DR.y-2.6}Z`,fill:'#eef0f2'},g);
- el('path',{d:`M${DR.x+13.5} ${DR.y-12}A18 18 0 0 1 ${DR.x+17.5} ${DR.y+4.5}L${DR.x+13} ${DR.y+3.5}A13.5 13.5 0 0 0 ${DR.x+10} ${DR.y-9}Z`,fill:'#2a2a2e'},g);
- const t=el('text',{'font-family':'system-ui,sans-serif','font-size':2.5,'font-weight':800,fill:'#111',transform:`translate(${DR.x-13} ${DR.y-5}) rotate(-38)`},g);t.textContent='DELAY';
- const t2=el('text',{'font-family':'system-ui,sans-serif','font-size':2.3,'font-weight':800,fill:'#e9edf2',transform:`translate(${DR.x-19} ${DR.y-8}) rotate(-48)`},g);t2.textContent='REVERB ON TOP';
+ const pol=(r,a)=>`${(DR.x+r*Math.cos(a*Math.PI/180)).toFixed(2)} ${(DR.y+r*Math.sin(a*Math.PI/180)).toFixed(2)}`;
+ const arc=(r,a0,a1,sw)=>`A${r} ${r} 0 ${Math.abs(a1-a0)>180?1:0} ${sw} ${pol(r,a1)}`;
+ el('path',{d:`M${pol(20.2,208)}${arc(20.2,208,326,1)}L${pol(13.4,326)}${arc(13.4,326,208,0)}Z`,fill:'#d9dbde'},g);
+ const dfs=document.querySelector('#guitar defs');
+ el('path',{id:'dlyPath',d:`M${pol(14.4,214)}${arc(14.4,214,300,1)}`,fill:'none'},dfs);
+ el('path',{id:'rvbPath',d:`M${pol(18.1,210)}${arc(18.1,210,312,1)}`,fill:'none'},dfs);
+ const t=el('text',{'font-family':'system-ui,sans-serif','font-size':2.4,'font-weight':800,fill:'#1a1a1a','letter-spacing':.35},g);const tp=el('textPath',{href:'#dlyPath'},t);tp.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href','#dlyPath');tp.textContent='DELAY';
+ const t2=el('text',{'font-family':'system-ui,sans-serif','font-size':1.75,'font-weight':600,fill:'#1a1a1a','letter-spacing':.12},g);const tp2=el('textPath',{href:'#rvbPath'},t2);tp2.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href','#rvbPath');tp2.textContent='REVERB ON TOP ▲';
  parts.delay=knob(g,DR.x,DR.y,12);
  const inner=el('g',{},g);
  el('circle',{cx:DR.x,cy:DR.y,r:7.5,fill:'#000',opacity:.6},g);
@@ -288,8 +302,7 @@ label('PUSH PULL',VOL.x+1,VOL.y-16,1.8); label('EFFECTS ON',VOL.x+2,VOL.y-13.3,1
  el('circle',{cx:TOG.x,cy:TOG.y,r:1.7,fill:'#777'},g);
  parts.togLever=el('line',{x1:TOG.x,y1:TOG.y,x2:TOG.x,y2:TOG.y-7,stroke:'url(#chrome)','stroke-width':1.6,'stroke-linecap':'round'},g);
  parts.togTip=el('circle',{cx:TOG.x,cy:TOG.y-7,r:1.4,fill:'#d9dde1',stroke:'#666','stroke-width':.3},g);}
-const TOGANG={dist:25,clean:70,over:115};
-[['DIST','dist'],['CLEAN','clean'],['OVER','over']].forEach(([t,k])=>{const a=TOGANG[k]*Math.PI/180;label(t,TOG.x+Math.sin(a)*9.5,TOG.y-Math.cos(a)*9.5+1,1.9,-30);});
+const TOGANG={dist:321,clean:51,over:141},TOGLEN={dist:7,clean:3,over:7};
 {const g=part('led');
  parts.ledGlow=el('circle',{cx:LED.x,cy:LED.y,r:7,fill:'url(#ledOn)',opacity:0},g);
  el('circle',{cx:LED.x,cy:LED.y,r:2.2,fill:'#d8dadc',stroke:'#888','stroke-width':.3},g);
@@ -298,8 +311,21 @@ function jack(key,x,y){const g=part(key);
  el('circle',{cx:x,cy:y,r:4.4,fill:'url(#chrome)',stroke:'#444','stroke-width':.4},g);
  el('circle',{cx:x,cy:y,r:3.1,fill:'#2a2a2c'},g);
  el('circle',{cx:x,cy:y,r:1.6,fill:'#050505'},g);}
-jack('recjack',RJ.x,RJ.y); label('OUT REC',RJ.x-6,RJ.y-8,2.1,-60); label('IN AUDIO',RJ.x+1,RJ.y-8,2.1,-60);
-jack('phones',PJ.x,PJ.y); {const t=label('🎧',PJ.x-11,PJ.y+3,4.5,0);}
+jack('recjack',RJ.x,RJ.y);
+jack('phones',PJ.x,PJ.y);
+{const g=plateG,pu=(P)=>{const dx=P.x-VOL.x,dy=P.y-VOL.y;return [dx*.628+dy*.778,dx*.778-dy*.628];};
+ // volume: two-line "PUSH PULL / EFFECTS ON", two index ticks, then "VOLUME" on the same baseline
+ plt(-2.6,19.5,'PUSH PULL',1.8,ALONG,{'text-anchor':'end'});plt(-2.6,17.1,'EFFECTS ON',1.8,ALONG,{'text-anchor':'end'});plt(-.6,17.1,'VOLUME',1.9,ALONG,{'text-anchor':'start'});
+ tick(-2.4,13.5,15.2);tick(.4,13.5,15.2);
+ // mode toggle: "- DIST / - CLEAN / - OVER", one row per lever position, reading across
+ const [tu,tv]=pu(TOG);[['DIST',-3.7],['CLEAN',0],['OVER',3.7]].forEach(([t,o])=>{tick(tu+o,tv+6.2,tv+7.1);plt(tu+o+.65,tv+7.8,t,1.85,ACROSS,{'text-anchor':'start'});});
+ // tone: "| TONE"
+ const [nu,nv]=pu(TONE);tick(nu-2.4,nv+16.4,nv+17.9);plt(nu-1,nv+16.4,'TONE',2,ALONG,{'text-anchor':'start'});
+ // rec / aux jack: "OUT REC | | P3 IN AUDIO"
+ const [ru,rv]=pu(RJ);plt(ru-2.6,rv+7.4,'OUT REC',1.75,ALONG,{'text-anchor':'end'});tick(ru-1.3,rv+5.9,rv+7.6);tick(ru+1.3,rv+5.9,rv+7.6);plt(ru+2.8,rv+7.4,'IN AUDIO',1.75,ALONG,{'text-anchor':'start'});plt(ru+3.2,rv+9.9,'P3',1.5,ALONG,{'text-anchor':'start'});
+ // phones jack: headphone glyph on the tone side, opening toward the jack, then an index tick
+ const [hu,hv]=pu(PJ);{const [hx,hy]=pl(hu-8.2,hv+.4);const hg=el('g',{transform:`translate(${hx.toFixed(1)} ${hy.toFixed(1)}) rotate(${ALONG})`},g);el('path',{d:'M0 -2.6A2.6 2.6 0 0 0 0 2.6',fill:'none',stroke:'#e9edf2','stroke-width':.65},hg);el('rect',{x:-.4,y:-3.3,width:1.9,height:1.4,rx:.45,fill:'#e9edf2'},hg);el('rect',{x:-.4,y:1.9,width:1.9,height:1.4,rx:.45,fill:'#e9edf2'},hg);}
+ tick(hu-4.4,hv+.2,hv+1.8);}
 {const g=part('selector');
  const x1=SEL.x-SEL.dx*SEL.len/2,y1=SEL.y-SEL.dy*SEL.len/2,x2=SEL.x+SEL.dx*SEL.len/2,y2=SEL.y+SEL.dy*SEL.len/2;
  el('line',{x1,y1,x2,y2,stroke:'#000','stroke-width':6,'stroke-linecap':'round'},g);
@@ -312,6 +338,7 @@ jack('phones',PJ.x,PJ.y); {const t=label('🎧',PJ.x-11,PJ.y+3,4.5,0);}
 /* ---------- output jack, strap buttons ---------- */
 {const g=part('output');
  const JX=407,JY=1146;el('ellipse',{cx:JX,cy:JY,rx:35,ry:27,fill:'#0d0d0e',stroke:'#2e2e31','stroke-width':.8,transform:`rotate(35 ${JX} ${JY})`},g);
+ el('circle',{cx:JX,cy:JY,r:9.5,fill:'#000',stroke:'#1d1d1f','stroke-width':.6},g);
  el('circle',{cx:JX,cy:JY,r:6.2,fill:'url(#chrome)',stroke:'#333','stroke-width':.4},g);
  el('circle',{cx:JX,cy:JY,r:3.6,fill:'#050505'},g);
  screw(g,JX-26*Math.cos(.61),JY-26*Math.sin(.61),1.6,'#111'); screw(g,JX+26*Math.cos(.61),JY+26*Math.sin(.61),1.6,'#111');}
@@ -324,13 +351,15 @@ jack('phones',PJ.x,PJ.y); {const t=label('🎧',PJ.x-11,PJ.y+3,4.5,0);}
  const off=[8,6,4,5,3,0];
  for(let i=0;i<6;i++){const x=sadX(i),y=SADDLE+off[i];
    el('rect',{x:x-5.5,y:y-6,width:11,height:14,rx:1.4,fill:'#1b1b1e',stroke:'#3a3a3e','stroke-width':.5},g);
-   el('circle',{cx:x-3,cy:y+4,r:1,fill:'#555'},g); el('circle',{cx:x+3,cy:y+4,r:1,fill:'#555'},g);
-   el('line',{x1:x,y1:y+8,x2:x,y2:1099,stroke:'#2c2c30','stroke-width':.9},g);}
- el('path',{d:'M352 1070C372 1064 379 1030 377 990C376 950 373 915 372 882',fill:'none',stroke:'#000','stroke-opacity':.4,'stroke-width':4.2,'stroke-linecap':'round',transform:'translate(1 1.5)'},g);
- el('path',{d:'M352 1070C372 1064 379 1030 377 990C376 950 373 915 372 882',fill:'none',stroke:'#151517','stroke-width':2.8,'stroke-linecap':'round'},g);
- el('path',{d:'M352 1070C372 1064 379 1030 377 990C376 950 373 915 372 882',fill:'none',stroke:'#6a6a70','stroke-width':.7,'stroke-linecap':'round',transform:'translate(-.6 0)'},g);
- el('circle',{cx:372,cy:878,r:3.6,fill:'#141416',stroke:'#3a3a3e','stroke-width':.5},g);el('circle',{cx:371,cy:877,r:1.2,fill:'#fff',opacity:.25},g);
+   [x-3,x+3].forEach(hx=>{el('circle',{cx:hx,cy:y-3,r:1.1,fill:'#3b3b40',stroke:'#58585e','stroke-width':.3},g);el('circle',{cx:hx,cy:y-3,r:.45,fill:'#111'},g);});
+   el('line',{x1:x,y1:y+8,x2:x,y2:1099,stroke:'#2c2c30','stroke-width':.9},g);
+   el('circle',{cx:x,cy:1099.5,r:1.4,fill:'#2a2a2e',stroke:'#4a4a50','stroke-width':.35},g);el('line',{x1:x-.8,y1:1099.5,x2:x+.8,y2:1099.5,stroke:'#111','stroke-width':.4},g);}
  parts.saddleOff=off;}
+{const g=part('arm');
+ el('path',{d:'M352 1070C364 1062 357 1030 354 990C352 950 352 915 352 882',fill:'none',stroke:'#000','stroke-opacity':.4,'stroke-width':4.2,'stroke-linecap':'round',transform:'translate(1 1.5)'},g);
+ el('path',{d:'M352 1070C364 1062 357 1030 354 990C352 950 352 915 352 882',fill:'none',stroke:'#151517','stroke-width':2.8,'stroke-linecap':'round'},g);
+ el('path',{d:'M352 1070C364 1062 357 1030 354 990C352 950 352 915 352 882',fill:'none',stroke:'#6a6a70','stroke-width':.7,'stroke-linecap':'round',transform:'translate(-.6 0)'},g);
+ el('circle',{cx:352,cy:878,r:3.6,fill:'#141416',stroke:'#3a3a3e','stroke-width':.5},g);el('circle',{cx:351,cy:877,r:1.2,fill:'#fff',opacity:.25},g);}
 
 /* ---------- strings ---------- */
 {const g=part('strings');
@@ -362,6 +391,7 @@ const PARTS={
  pickguard:{name:'Pickguard',group:'Body',what:'Black pickguard with a white edge line. It holds the pickups, the selector and the controls.',specs:[['Color','Black','spec'],['Size','218 × 273 mm','photo'],['Edge','White ply line','photo']],setup:[]},
  neckpu:{name:'Neck pickup',group:'Pickups',what:'Single coil next to the neck. Warm and round sound.',specs:[['Type','Single coil','spec'],['Selector','Position 5','inferred']],setup:[],adjust:['pu_sc']},
  midpu:{name:'Middle pickup',group:'Pickups',what:'Single coil in the middle. Thin and clear alone, "quacky" in combinations.',specs:[['Type','Single coil','spec'],['Selector','Position 3','inferred']],setup:[],adjust:['pu_sc']},
+ arm:{name:'Tremolo arm',group:'Hardware',what:'Screw-in arm. Press it toward the body to lower the pitch. Thread it in until it swings with light friction.',specs:[['Type','Screw-in, black','photo'],['Tension','Turn in until it holds its position','ref']],setup:[]},
  bridgepu:{name:'Bridge humbucker',group:'Pickups',what:'Double coil next to the bridge. The most output and the least hum. Best for overdrive and distortion.',specs:[['Type','Humbucker','spec'],['Selector','Position 1','inferred']],setup:[],adjust:['pu_hb']},
  selector:{name:'Pickup selector',group:'Electronics',what:'5-way lever that selects which pickups play.',specs:[['Positions','5','spec'],['1 (toward bridge)','Bridge humbucker','inferred'],['2','Bridge + middle (wiring varies, often coil split)','inferred'],['3','Middle','inferred'],['4','Middle + neck','inferred'],['5 (toward neck)','Neck','inferred']],setup:[],ctl:'selector'},
  volume:{name:'Volume · push-pull',group:'Electronics',what:'Master volume. Pull the knob up to turn the built-in effects on. Push it down for a plain guitar signal.',specs:[['Label','"PUSH PULL / EFFECTS ON / VOLUME"','photo']],setup:[],ctl:'volume'},
@@ -393,7 +423,7 @@ function applyState(){
  parts.tone.setAttribute('transform',`rotate(${ang(ST.tone)} ${TONE.x} ${TONE.y})`);
  parts.delay.setAttribute('transform',`rotate(${ang(ST.delay)} ${DR.x} ${DR.y})`);
  parts.reverb.setAttribute('transform',`rotate(${ang(ST.reverb)} ${DR.x} ${DR.y})`);
- const a=TOGANG[ST.mode]*Math.PI/180, tx=TOG.x+Math.sin(a)*7, ty=TOG.y-Math.cos(a)*7;
+ const a=TOGANG[ST.mode]*Math.PI/180,L=TOGLEN[ST.mode], tx=TOG.x+Math.sin(a)*L, ty=TOG.y-Math.cos(a)*L;
  parts.togLever.setAttribute('x2',tx);parts.togLever.setAttribute('y2',ty);parts.togTip.setAttribute('cx',tx);parts.togTip.setAttribute('cy',ty);
  const f=(5-ST.sel)/4; // 1=bridge end (bottom)
  const px=SEL.x+SEL.dx*SEL.len*(.5-f)*.85, py=SEL.y+SEL.dy*SEL.len*(.5-f)*.85;
