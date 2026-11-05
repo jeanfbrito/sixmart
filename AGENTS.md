@@ -9,7 +9,8 @@ Sixmart, an HSS Strat-style guitar with built-in effects. The page draws the
 guitar in SVG at real scale. With it, the reader can do these tasks:
 
 - Pan and zoom to any part. Read its specs, setup values and setup
-  diagrams.
+  diagrams. Turn the drawing horizontal, as the guitar hangs when the
+  player wears it.
 - Set the effects controls by hand and save each setting with a name.
   Export or import the saved settings as a JSON file.
 - Open a preset that an agent or a script made. The page sets the knobs,
@@ -143,6 +144,22 @@ JavaScript builds the SVG at load time. Named sections divide the script
   `#presetLayer` and the riff dots are in `#riffLayer`. Both are outside
   `#world`, so "fit" ignores them. `setVB` hides the built-in fret numbers
   (`.fretnum`) while a riff is active, because the riff draws its own.
+- **rotation.** `#rot` holds `#world`, both overlay layers and the hover
+  and select boxes. `setRot` sets its `rotate(ROT)`: 0 is upright, and 90
+  is horizontal as worn (headstock on the right, low E on top, controls at
+  the bottom). The page does not draw the parts again. Drawing
+  coordinates stay the same, and the `viewBox` is in view space. Give a
+  box in drawing units to `boxView`, because `boxView` turns it with
+  `rbox`. An overlay label reads level because `upright(x, y)` turns it
+  back around its visual center. The riff dots, fret numbers, string
+  names, the step label, the callout labels and `.fretnum`
+  (`placeFretNums`) use it. A new overlay label must use it too.
+  `drawCallouts` and `drawRiff` choose the side of each label from its
+  position in view space (`rot2`). `toggleRot` fits the selected part,
+  the riff or the preset again. With none, it keeps the center and the
+  zoom. Do not fit the old view box again: its width and height swap, so
+  each press zooms out by the aspect ratio of the stage. The rotate
+  button and the R key call `toggleRot`.
 - **presets API.** `applyConfig(cfg)` normalizes a config with `normalize`
   (keys and aliases in `SCHEMA`). Then it sets `ST`, makes the steps
   (`stepsFor`), draws the callouts (`drawCallouts`, placed by `ANCHOR`) and
@@ -193,6 +210,7 @@ JavaScript builds the SVG at load time. Named sections divide the script
 | `sixmart.state` | `ST`, the current control setting |
 | `sixmart.open` | Which panel sections and diagram cards are open (ids `ov.*`, `part.*`, `api.*`, `adj.<key>`) |
 | `sixmart.presets` | The saved presets |
+| `sixmart.view` | The rotation of the drawing (`{"rot":0}` or `{"rot":90}`) |
 
 The data stays in the reader's browser only. Each read and write is in a
 `try`/`catch`, so the page works without storage.

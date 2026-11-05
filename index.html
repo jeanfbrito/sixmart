@@ -36,6 +36,11 @@ body{background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system
 .toolbar button,.crumb button{border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;width:38px;height:38px;font-size:18px;cursor:pointer;display:grid;place-items:center;backdrop-filter:blur(6px)}
 .toolbar button:hover{border-color:var(--accent)}
 .zoomlvl{font:600 11px/1 ui-monospace,Menlo,monospace;color:var(--muted);text-align:center;padding-top:2px}
+.toolbar #rotate{margin-top:6px}
+.toolbar button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.gh{position:absolute;right:14px;bottom:12px;z-index:2;display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--ink);font-size:12px;font-weight:600;text-decoration:none;backdrop-filter:blur(6px)}
+.gh:hover{border-color:var(--accent)}
+.gh svg{width:16px;height:16px;display:block}
 .crumb{position:absolute;left:14px;top:14px;z-index:2;display:flex;gap:8px;align-items:center}
 .crumb .title{background:var(--btn);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:600;backdrop-filter:blur(6px)}
 .hint{position:absolute;left:14px;bottom:12px;color:var(--muted);font-size:12px;z-index:2;background:var(--btn);border:1px solid var(--line);padding:6px 10px;border-radius:8px;backdrop-filter:blur(6px)}
@@ -162,8 +167,10 @@ textarea.tabin{display:block;font:12px/1.35 ui-monospace,Menlo,monospace;resize:
       <button id="zout" title="Zoom out" aria-label="Zoom out">−</button>
       <button id="fit" title="Fit" aria-label="Fit">⤢</button>
       <div class="zoomlvl" id="zlvl">100%</div>
+      <button id="rotate" aria-pressed="false" title="Turn horizontal, as worn (R)" aria-label="Turn horizontal, as worn">↻</button>
     </div>
     <div class="hint">Scroll or pinch to zoom · drag to move · click a part</div>
+    <a class="gh" href="https://github.com/jeanfbrito/sixmart" target="_blank" rel="noopener" title="Source code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
     <svg id="guitar" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-label="Tagima Sixmart guitar drawing">
       <defs>
         <radialGradient id="bodyGrad" cx="0.42" cy="0.55" r="0.7">
@@ -199,11 +206,13 @@ textarea.tabin{display:block;font:12px/1.35 ui-monospace,Menlo,monospace;resize:
         <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
         <clipPath id="bodyClip"><path id="bodyClipPath"/></clipPath>
       </defs>
+      <g id="rot">
       <g id="world"></g>
       <g id="riffLayer" pointer-events="none"></g>
       <g id="presetLayer" pointer-events="none"></g>
       <rect id="hoverBox" fill="none" stroke="var(--accent)" stroke-opacity=".5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" stroke-width="1.5" rx="3" visibility="hidden" pointer-events="none"/>
       <rect id="selBox" fill="none" stroke="var(--accent)" vector-effect="non-scaling-stroke" stroke-width="2" rx="3" visibility="hidden" pointer-events="none"/>
+      </g>
     </svg>
   </div>
   <aside class="panel" id="panel" aria-live="polite"></aside>
@@ -674,11 +683,40 @@ panel.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.target.id==='pName'|
 const svg=document.getElementById('guitar'), stage=document.getElementById('stage');
 let vb={x:0,y:0,w:600,h:1300}, anim=null, current=null;
 const full=()=>world.getBBox();
+/* Rotation. #rot turns the drawing and both overlays by ROT degrees: 0 = upright, 90 = horizontal as
+   worn: headstock on the right, low E on top, the controls at the bottom, as a person in front of the
+   player sees it. Nothing is drawn again. The viewBox is in view space: boxView turns each drawing box
+   with rbox, and upright() turns an overlay label back so it reads level. Stored in localStorage 'sixmart.view'. */
+const rotG=document.getElementById('rot');
+let ROT=(()=>{try{return (JSON.parse(localStorage.getItem('sixmart.view')||'{}')||{}).rot===90?90:0;}catch(e){return 0;}})();
+function rot2(x,y,deg){const a=deg*Math.PI/180,c=Math.round(Math.cos(a)),s=Math.round(Math.sin(a));return {x:x*c-y*s,y:x*s+y*c};}
+function rbox(b,deg=ROT){if(!deg)return b;const p=rot2(b.x,b.y,deg),q=rot2(b.x+b.width,b.y+b.height,deg);
+ return {x:Math.min(p.x,q.x),y:Math.min(p.y,q.y),width:Math.abs(p.x-q.x),height:Math.abs(p.y-q.y)};}
+const upright=(x,y)=>ROT?`rotate(${-ROT} ${(+x).toFixed(2)} ${(+y).toFixed(2)})`:'';
 function setVB(v){vb=v;svg.setAttribute('viewBox',`${v.x} ${v.y} ${v.w} ${v.h}`);
- const f=full(); document.getElementById('zlvl').textContent=Math.round(Math.max(f.height/v.h,f.width/v.w)*100)+'%';
- document.querySelectorAll('.fretnum').forEach(t=>t.setAttribute('fill-opacity',v.w<140&&!RIFF?.55:0));}
+ const f=rbox(full()); document.getElementById('zlvl').textContent=Math.round(Math.max(f.height/v.h,f.width/v.w)*100)+'%';
+ document.querySelectorAll('.fretnum').forEach(t=>t.setAttribute('fill-opacity',(ROT?v.h:v.w)<140&&!RIFF?.55:0));}
 function aspect(){const r=stage.getBoundingClientRect();return r.width/Math.max(1,r.height);}
-function boxView(b,pad){let w=b.width+pad*2,h=b.height+pad*2;const a=aspect();if(w/h<a)w=h*a;else h=w/a;return{x:b.x+b.width/2-w/2,y:b.y+b.height/2-h/2,w,h};}
+// b is a box in drawing units; the result is a viewBox in view space
+function boxView(b,pad){b=rbox(b);let w=b.width+pad*2,h=b.height+pad*2;const a=aspect();if(w/h<a)w=h*a;else h=w/a;return{x:b.x+b.width/2-w/2,y:b.y+b.height/2-h/2,w,h};}
+function placeFretNums(){document.querySelectorAll('.fretnum').forEach(t=>{const n=+t.textContent,y=(fretY(n-1)+fretY(n))/2;
+ if(ROT){const x=CX-halfW(y)-3.6;t.setAttribute('x',x.toFixed(2));t.setAttribute('y',(y+1.6).toFixed(2));t.setAttribute('text-anchor','middle');t.setAttribute('transform',upright(x,y));}
+ else{t.setAttribute('x',CX-halfW(fretY(n))-4);t.setAttribute('y',y+1.8);t.setAttribute('text-anchor','end');t.removeAttribute('transform');}});}
+function setRot(r,init){ROT=r===90?90:0;if(ROT)rotG.setAttribute('transform',`rotate(${ROT})`);else rotG.removeAttribute('transform');
+ if(!init){try{localStorage.setItem('sixmart.view',JSON.stringify({rot:ROT}));}catch(e){}}
+ placeFretNums();drawRiff();if(PRESET)drawCallouts(PRESET.steps);
+ const b=document.getElementById('rotate'),t=ROT?'Turn upright':'Turn horizontal, as worn';
+ b.setAttribute('aria-pressed',ROT?'true':'false');b.setAttribute('aria-label',t);b.title=t+' (R)';}
+// the drawing box that the screen shows now
+function viewWorld(){return rbox({x:vb.x,y:vb.y,width:vb.w,height:vb.h},-ROT);}
+// After the turn: fit the selected part, the riff or the preset again. With none, fit the whole guitar if it was
+// all in view, otherwise keep the same center and zoom. Do not fit the old box again: its width and height swap,
+// so each press would zoom out by the aspect ratio of the stage.
+function toggleRot(){const w=viewWorld(),f=full(),c=rot2(vb.x+vb.w/2,vb.y+vb.h/2,-ROT);
+ const all=w.x<=f.x+1&&w.y<=f.y+1&&w.x+w.width>=f.x+f.width-1&&w.y+w.height>=f.y+f.height-1;
+ cancelAnimationFrame(anim);setRot(ROT?0:90);
+ if(current)setVB(partView(current));else if(RIFF)riffView(true);else if(PRESET)presetView(true);
+ else if(all)setVB(boxView(full(),20));else{const p=rot2(c.x,c.y,ROT);setVB({x:p.x-vb.w/2,y:p.y-vb.h/2,w:vb.w,h:vb.h});}}
 function animateTo(t,ms=520){cancelAnimationFrame(anim);const s={...vb},t0=performance.now();
  const step=now=>{let k=Math.min(1,(now-t0)/ms);k=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
   setVB({x:s.x+(t.x-s.x)*k,y:s.y+(t.y-s.y)*k,w:s.w+(t.w-s.w)*k,h:s.h+(t.h-s.h)*k});if(k<1)anim=requestAnimationFrame(step);};anim=requestAnimationFrame(step);}
@@ -707,17 +745,18 @@ function hover(e){const p=e.target.closest&&e.target.closest('.part');
  if(p.dataset.part!=='body'&&p.dataset.part!==current) box(hb,p.getBBox()); else hb.setAttribute('visibility','hidden');}
 svg.addEventListener('pointerleave',()=>{tip.style.opacity=0;hb.setAttribute('visibility','hidden');});
 
+function partView(key){const b=world.querySelector(`[data-part="${key}"]`).getBBox(),m=Math.max(b.width,b.height);return boxView(b,m<40?18:m*.25);}
 function select(key,instant){current=key;const g=world.querySelector(`[data-part="${key}"]`);const b=g.getBBox();
  const sb=document.getElementById('selBox');box(sb,b);hb.setAttribute('visibility','hidden');
- const min=Math.max(b.width,b.height)<40?18:Math.max(b.width,b.height)*.25;
- (instant?setVB:animateTo)(boxView(b,min));renderPart(key);try{history.replaceState(null,'','#'+key);}catch(e){}document.getElementById('crumbTitle').textContent=PARTS[key].name;}
+ (instant?setVB:animateTo)(partView(key));renderPart(key);try{history.replaceState(null,'','#'+key);}catch(e){}document.getElementById('crumbTitle').textContent=PARTS[key].name;}
 function home(){current=null;try{history.replaceState(null,'',location.pathname+(RIFF?'#'+riffParamsOf(RIFF):PRESET?'#'+presetParams():location.search));}catch(e){}document.getElementById('selBox').setAttribute('visibility','hidden');animateTo(boxView(full(),20));renderOverview();document.getElementById('crumbTitle').textContent='Tagima Sixmart';}
 document.getElementById('home').onclick=home;
 document.getElementById('fit').onclick=()=>animateTo(boxView(full(),20));
+document.getElementById('rotate').onclick=toggleRot;
 document.getElementById('zin').onclick=()=>{const c={x:vb.x+vb.w/2,y:vb.y+vb.h/2};const t={...vb};const f=.6;animateTo({x:c.x-(c.x-t.x)*f,y:c.y-(c.y-t.y)*f,w:t.w*f,h:t.h*f},260);};
 document.getElementById('zout').onclick=()=>{const c={x:vb.x+vb.w/2,y:vb.y+vb.h/2};const f=1/.6;animateTo({x:c.x-(c.x-vb.x)*f,y:c.y-(c.y-vb.y)*f,w:vb.w*f,h:vb.h*f},260);};
 addEventListener('keydown',e=>{if(e.key==='Escape')home();if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;
- if(RIFF&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){e.preventDefault();riffStep(RIFF.step+(e.key==='ArrowRight'?1:-1));return;}if(e.key==='+'||e.key==='=')document.getElementById('zin').click();if(e.key==='-')document.getElementById('zout').click();});
+ if(RIFF&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){e.preventDefault();riffStep(RIFF.step+(e.key==='ArrowRight'?1:-1));return;}if((e.key==='r'||e.key==='R')&&!e.metaKey&&!e.ctrlKey&&!e.altKey)toggleRot();if(e.key==='+'||e.key==='=')document.getElementById('zin').click();if(e.key==='-')document.getElementById('zout').click();});
 new ResizeObserver(()=>{const c={x:vb.x+vb.w/2,y:vb.y+vb.h/2};const a=aspect();let w=vb.w,h=vb.h;if(w/h<a)w=h*a;else h=w/a;
  // keep the zoom level: base on the dimension that was fitting
  setVB({x:c.x-w/2,y:c.y-h/2,w,h});}).observe(stage);
@@ -777,16 +816,21 @@ function stepsFor(set,st){
 }
 const ANCHOR={pickup:{x:SEL.x,y:SEL.y,r:23},effects:{x:VOL.x,y:VOL.y,r:VOL.r+3.5},volume:{x:VOL.x,y:VOL.y,r:VOL.r+3.5},mode:{x:TOG.x,y:TOG.y,r:7},tone:{x:TONE.x,y:TONE.y,r:TONE.r+3.5},delay:{x:DR.x,y:DR.y,r:15.5},reverb:{x:DR.x,y:DR.y,r:9}};
 function drawCallouts(steps){
- layer.innerHTML='';const X=522,Y0=968,DY=22.5;
- steps.forEach((s,i)=>{const a=ANCHOR[s.key],y=Y0+i*DY;const g=el('g',{class:'callout','data-step':i},layer);
+ layer.innerHTML='';const DY=22.5,N=steps.length;
+ steps.forEach((s,i)=>{const a=ANCHOR[s.key];const g=el('g',{class:'callout','data-step':i},layer);
+  // labels in a column on the right of the controls: beside the body when upright, under its edge when horizontal
+  const X=ROT?512+i*DY:522,y=ROT?960:968+i*DY;
   el('circle',{class:'ring',cx:a.x,cy:a.y,r:a.r,fill:'none',stroke:'var(--accent)','stroke-width':.9},g);
   const dx=X-a.x,dy=y-a.y,d=Math.hypot(dx,dy);
   el('line',{x1:(a.x+dx/d*a.r).toFixed(1),y1:(a.y+dy/d*a.r).toFixed(1),x2:X,y2:y,stroke:'var(--accent)','stroke-width':.7},g);
-  const rect=el('rect',{x:X,y:y-4.8,height:9.6,rx:4.8,fill:'var(--accent)'},g);
-  el('circle',{cx:X+4.9,cy:y,r:3.4,fill:'var(--accent-ink)'},g);
-  const n=el('text',{x:X+4.9,y:y+1.5,'text-anchor':'middle','font-family':'system-ui,sans-serif','font-size':4.2,'font-weight':800,fill:'var(--accent)'},g);n.textContent=i+1;
-  const t=el('text',{x:X+10.6,y:y+1.5,'font-family':'system-ui,sans-serif','font-size':4.2,'font-weight':700,fill:'var(--accent-ink)'},g);t.textContent=`${s.label} → ${s.value}`;
-  rect.setAttribute('width',(t.getComputedTextLength()+15.5).toFixed(1));});
+  const lg=el('g',{transform:upright(X,y)},g);
+  const rect=el('rect',{y:y-4.8,height:9.6,rx:4.8,fill:'var(--accent)'},lg);
+  const c=el('circle',{cy:y,r:3.4,fill:'var(--accent-ink)'},lg);
+  const n=el('text',{y:y+1.5,'text-anchor':'middle','font-family':'system-ui,sans-serif','font-size':4.2,'font-weight':800,fill:'var(--accent)'},lg);n.textContent=i+1;
+  const t=el('text',{y:y+1.5,'font-family':'system-ui,sans-serif','font-size':4.2,'font-weight':700,fill:'var(--accent-ink)'},lg);t.textContent=`${s.label} → ${s.value}`;
+  // the label grows away from its control on the screen, so the lines do not cross the labels
+  const wd=t.getComputedTextLength()+15.5,x0=rot2(X,y,ROT).x<rot2(a.x,a.y,ROT).x?X-wd:X;
+  rect.setAttribute('x',x0.toFixed(1));rect.setAttribute('width',wd.toFixed(1));c.setAttribute('cx',(x0+4.9).toFixed(1));n.setAttribute('x',(x0+4.9).toFixed(1));t.setAttribute('x',(x0+10.6).toFixed(1));});
 }
 const baseURL=()=>location.href.split(/[?#]/)[0];
 function paramsFor(set,st,meta){const p=new URLSearchParams();for(const k of ORDER){const sk=KEY2ST[k];if(sk in set)p.set(k,k==='effects'?(st.pulled?'on':'off'):st[sk]);}if(meta.title)p.set('title',meta.title);if(meta.note)p.set('note',meta.note);return p.toString();}
@@ -1047,23 +1091,28 @@ function riffBox(){const {start,end}=riffSpan(),y0=start?fretY(start-1)-8:NUT-26
 const strGap=y=>9+4.26*Math.max(0,y-NUT)/(SADDLE-NUT); // string spacing in units at height y
 function drawRiff(){
  rlayer.innerHTML='';if(!RIFF)return;
- const {start,end,k}=riffBox(),fs=v=>`font-size:${(v*k).toFixed(2)}px`,ev=RIFF.events,cur=ev[RIFF.step],nxt=ev[RIFF.step+1],key=n=>n.s+':'+(n.mute?'x':n.f);
+ const {start,end,y0,y1,k}=riffBox(),fs=v=>`font-size:${(v*k).toFixed(2)}px`,ev=RIFF.events,cur=ev[RIFF.step],nxt=ev[RIFF.step+1],key=n=>n.s+':'+(n.mute?'x':n.f);
  const curK=new Set(cur.notes.map(key)),nxtK=new Set(nxt?nxt.notes.map(key):[]),g=el('g',{class:'riff'+(cur.notes.length>1?' chordstep':'')},rlayer);
- for(let n=Math.max(1,start);n<=end;n++){const y=(fretY(n-1)+fretY(n))/2;el('text',{class:'rf-num',style:fs(4.4),x:(CX-halfW(y)-3.5).toFixed(1),y:(y+1.5*k).toFixed(1)},g).textContent=n;}
- const sy=start?fretY(start-1)-3:NUT-17.5;for(let s=1;s<=6;s++)el('text',{class:'rf-str',style:`font-size:${(4.8*Math.min(k,1.25)).toFixed(2)}px`,x:strX(6-s,Math.max(sy,NUT)).toFixed(1),y:sy.toFixed(1)},g).textContent=SLET[s];
+ // each label turns back with upright() around its visual center, so it reads level when the drawing is horizontal
+ for(let n=Math.max(1,start);n<=end;n++){const y=(fretY(n-1)+fretY(n))/2,x=CX-halfW(y)-(ROT?2+1.6*k:3.5);
+  el('text',{class:'rf-num',style:fs(4.4)+(ROT?';text-anchor:middle':''),x:x.toFixed(1),y:(y+1.5*k).toFixed(1),transform:upright(x,y)},g).textContent=n;}
+ const sy=start?fretY(start-1)-3:NUT-17.5,sf=4.8*Math.min(k,1.25);
+ for(let s=1;s<=6;s++){const x=strX(6-s,Math.max(sy,NUT));el('text',{class:'rf-str',style:`font-size:${sf.toFixed(2)}px`,x:x.toFixed(1),y:sy.toFixed(1),transform:upright(x,sy-.35*sf)},g).textContent=SLET[s];}
  if(nxt){const a=notePos(cur.notes[0]),b=notePos(nxt.notes[0]);if(Math.hypot(a.x-b.x,a.y-b.y)>1)el('line',{class:'rf-path',x1:a.x.toFixed(2),y1:a.y.toFixed(2),x2:b.x.toFixed(2),y2:b.y.toFixed(2)},g);}
  const pos=new Map();ev.forEach(e=>e.notes.forEach(n=>{const k=key(n);if(!pos.has(k))pos.set(k,n);}));
  const rank=k=>curK.has(k)?2:nxtK.has(k)?1:0;
  for(const [k,n] of [...pos].sort(([a],[b])=>rank(a)-rank(b))){const p=notePos(n),st=['','next','on'][rank(k)];
-  const r=.43*strGap(p.y),d=el('g',{class:'rf-dot'+(st?' '+st:''),transform:`translate(${p.x.toFixed(2)} ${p.y.toFixed(2)})`},g);
+  const r=.43*strGap(p.y),d=el('g',{class:'rf-dot'+(st?' '+st:''),transform:`translate(${p.x.toFixed(2)} ${p.y.toFixed(2)})`+(ROT?` rotate(${-ROT})`:'')},g);
   if(st==='on')el('circle',{class:'rf-pulse',r:(r+1.3).toFixed(2)},d);
   el('circle',{r:r.toFixed(2)},d);el('text',{y:(r*.42).toFixed(2),style:`font-size:${(r*1.16).toFixed(2)}px`},d).textContent=n.mute?'×':n.f;}
- const ps=cur.notes.map(notePos),py=ps.reduce((s,p)=>s+p.y,0)/ps.length,px=CX+halfW(Math.max(py,NUT))+6;
- const pg=el('g',{class:'rf-pill'},g),rect=el('rect',{x:px.toFixed(1),y:(py-4.8*k).toFixed(1),height:(9.6*k).toFixed(2),rx:(4.8*k).toFixed(2)},pg);
+ // the label sits beside the neck when upright, and below it when horizontal, where it grows toward the middle of the riff so it stays in view
+ const ps=cur.notes.map(notePos),py=ps.reduce((s,p)=>s+p.y,0)/ps.length,px=CX+halfW(Math.max(py,NUT))+(ROT?3+4.8*k:6);
+ const pg=el('g',{class:'rf-pill',transform:upright(px,py)},g),rect=el('rect',{x:px.toFixed(1),y:(py-4.8*k).toFixed(1),height:(9.6*k).toFixed(2),rx:(4.8*k).toFixed(2)},pg);
  const t=el('text',{x:(px+4.6*k).toFixed(1),y:(py+1.5*k).toFixed(1),style:fs(4.2)},pg);t.textContent=`${RIFF.step+1}/${ev.length} · `+(cur.name?cur.name+' · ':'')+(cur.notes.length>1?`${cur.notes.length} notes together`:shortNote(cur.notes[0]));
- rect.setAttribute('width',(t.getComputedTextLength()+9.2*k).toFixed(1));}
+ const wd=t.getComputedTextLength()+9.2*k;rect.setAttribute('width',wd.toFixed(1));
+ if(ROT&&rot2(px,py,ROT).x>rot2(px,(y0+y1)/2,ROT).x){rect.setAttribute('x',(px-wd).toFixed(1));t.setAttribute('x',(px-wd+4.6*k).toFixed(1));}}
 function riffView(instant){if(!RIFF)return;const {y0,y1,k}=riffBox(),h=halfW(y1);
- (instant?setVB:animateTo)(boxView({x:CX-h-12*k,y:y0,width:2*h+12*k+74*k,height:y1-y0},6));}
+ (instant?setVB:animateTo)(boxView({x:CX-h-12*k,y:y0,width:2*h+12*k+(ROT?4+11*k:74*k),height:y1-y0},6));}
 function riffNowHTML(){const e=RIFF.events[RIFF.step];return `<b>Step ${RIFF.step+1} of ${RIFF.events.length}${e.name?' · '+esc(e.name):''}${e.notes.length>1?' · play together':''}</b>${e.notes.map(n=>`<span>${esc(noteText(n))}</span>`).join('')}`;}
 function riffStep(i,fromPlay){if(!RIFF)return;if(!fromPlay)stopPlay();RIFF.step=Math.max(0,Math.min(RIFF.events.length-1,i));drawRiff();
  panel.querySelectorAll('.tcol').forEach(g=>g.classList.toggle('on',+g.dataset.rstep===RIFF.step));
@@ -1211,7 +1260,7 @@ addEventListener('message',e=>{const d=e.data;if(!d||typeof d!=='object'||typeof
  else if(d.type==='sixmart:riff'){r=applyRiff(d.riff||d.config||{});type='sixmart:riffstate';}
  if(r&&e.source){try{e.source.postMessage({type,...r},'*');}catch(err){}}});
 
-applyState();setVB(boxView(full(),20));renderOverview();
+applyState();setRot(ROT,true);setVB(boxView(full(),20));renderOverview();
 {const h=location.hash.slice(1),cfg=configFromURL();
  if(cfg)route(cfg,{instant:true});else if(h==='api')showApi();else if(PARTS[h])select(h,true);}
 addEventListener('hashchange',()=>{const h=location.hash.slice(1);
