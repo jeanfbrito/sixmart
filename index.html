@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sixmart Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Yellowtail&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f2ef; --stage-a:#ecebe8; --stage-b:#d9d6d1; --panel:#ffffff; --ink:#1b1a19; --muted:#6b6660;
+  --line:#e2ddd6; --accent:#d4142a; --accent-ink:#ffffff; --chip:#f2efea; --btn:#ffffffee;
+  --tag-spec:#1f6f43; --tag-photo:#1d4f91; --tag-ref:#8a5a00; --tag-inf:#7a3a8f;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121214; --stage-a:#1d1d21; --stage-b:#0f0f11; --panel:#1b1b1f; --ink:#ecebe8; --muted:#9b978f;
+    --line:#2e2e34; --accent:#ff4b5c; --accent-ink:#1b0306; --chip:#26262c; --btn:#26262cee;
+    --tag-spec:#6fd39b; --tag-photo:#8ab8ff; --tag-ref:#f0c060; --tag-inf:#d79cf0;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121214; --stage-a:#1d1d21; --stage-b:#0f0f11; --panel:#1b1b1f; --ink:#ecebe8; --muted:#9b978f;
+  --line:#2e2e34; --accent:#ff4b5c; --accent-ink:#1b0306; --chip:#26262c; --btn:#26262cee;
+  --tag-spec:#6fd39b; --tag-photo:#8ab8ff; --tag-ref:#f0c060; --tag-inf:#d79cf0;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 390px;height:100vh}
+.stage{position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,var(--stage-a),var(--stage-b));touch-action:none;user-select:none;-webkit-user-select:none}
+#guitar{width:100%;height:100%;display:block;cursor:grab}
+#guitar.dragging{cursor:grabbing}
+.part{cursor:pointer}
+.toolbar{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:6px;z-index:2}
+.toolbar button,.crumb button{border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;width:38px;height:38px;font-size:18px;cursor:pointer;display:grid;place-items:center;backdrop-filter:blur(6px)}
+.toolbar button:hover{border-color:var(--accent)}
+.zoomlvl{font:600 11px/1 ui-monospace,Menlo,monospace;color:var(--muted);text-align:center;padding-top:2px}
+.crumb{position:absolute;left:14px;top:14px;z-index:2;display:flex;gap:8px;align-items:center}
+.crumb .title{background:var(--btn);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:600;backdrop-filter:blur(6px)}
+.hint{position:absolute;left:14px;bottom:12px;color:var(--muted);font-size:12px;z-index:2;background:var(--btn);border:1px solid var(--line);padding:6px 10px;border-radius:8px;backdrop-filter:blur(6px)}
+.tip{position:fixed;pointer-events:none;background:#111;color:#fff;font-size:12px;padding:4px 8px;border-radius:6px;opacity:0;transition:opacity .12s;z-index:5;white-space:nowrap}
+.panel{min-width:0;border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:22px 22px 40px}
+.panel h1{font-size:20px;margin:0 0 2px}
+.panel h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:22px 0 8px}
+.sub{color:var(--muted);margin:0 0 12px}
+.what{margin:8px 0 0}
+table.kv{width:100%;border-collapse:collapse}
+table.kv td{padding:7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+table.kv td:first-child{color:var(--muted);width:38%;padding-right:10px}
+.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:999px;margin-left:6px;border:1px solid currentColor;vertical-align:1px;opacity:.85}
+.tag.spec{color:var(--tag-spec)} .tag.photo{color:var(--tag-photo)} .tag.ref{color:var(--tag-ref)} .tag.inferred{color:var(--tag-inf)}
+.note{color:var(--muted);font-size:12.5px;display:block;margin-top:2px}
+.list{display:flex;flex-direction:column;gap:2px}
+.group-label{font-size:11px;color:var(--muted);margin:12px 0 4px;text-transform:uppercase;letter-spacing:.06em}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:5px 11px;cursor:pointer;font:inherit;font-size:13px}
+.chip:hover,.chip.on{border-color:var(--accent);color:var(--accent)}
+.chip.on{background:var(--accent);color:var(--accent-ink)}
+.ctl{margin:12px 0}
+.ctl label{display:flex;justify-content:space-between;font-weight:600;margin-bottom:4px}
+.ctl label span{font-family:ui-monospace,Menlo,monospace;color:var(--muted);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.sound{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:6px}
+.sound b{display:block;margin-bottom:2px}
+textarea{width:100%;min-height:80px;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:10px;padding:10px;font:inherit;resize:vertical}
+.back{background:none;border:0;color:var(--accent);cursor:pointer;padding:0;font:inherit;margin-bottom:10px}
+.foot{color:var(--muted);font-size:12px;margin-top:26px;border-top:1px solid var(--line);padding-top:12px}
+.foot a{color:inherit}
+.legend{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:var(--muted)}
+@media (max-width:860px){
+  body{overflow:auto;height:auto}
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:64vh auto;height:auto}
+  .panel{border-left:0;border-top:1px solid var(--line);padding:16px 16px 40px}
+  .hint{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="stage" id="stage">
+    <div class="crumb"><button id="home" title="Show whole guitar" aria-label="Show whole guitar">⌂</button><div class="title" id="crumbTitle">Tagima Sixmart</div></div>
+    <div class="toolbar">
+      <button id="zin" title="Zoom in" aria-label="Zoom in">+</button>
+      <button id="zout" title="Zoom out" aria-label="Zoom out">−</button>
+      <button id="fit" title="Fit" aria-label="Fit">⤢</button>
+      <div class="zoomlvl" id="zlvl">100%</div>
+    </div>
+    <div class="hint">Scroll or pinch to zoom · drag to move · click a part</div>
+    <svg id="guitar" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-label="Tagima Sixmart guitar drawing">
+      <defs>
+        <radialGradient id="bodyGrad" cx="0.42" cy="0.55" r="0.7">
+          <stop offset="0" stop-color="#e3222d"/><stop offset=".5" stop-color="#b10c15"/><stop offset="1" stop-color="#5c0207"/>
+        </radialGradient>
+        <linearGradient id="bodySheen" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".38" stop-color="#fff" stop-opacity="0"/>
+          <stop offset=".45" stop-color="#fff" stop-opacity=".22"/><stop offset=".52" stop-color="#fff" stop-opacity="0"/>
+          <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+        <pattern id="flake" width="9" height="9" patternUnits="userSpaceOnUse">
+          <circle cx="1.5" cy="2" r=".35" fill="#ffb3b3" opacity=".7"/><circle cx="6" cy="1" r=".25" fill="#fff" opacity=".6"/>
+          <circle cx="4" cy="6" r=".3" fill="#ff7a7a" opacity=".6"/><circle cx="8" cy="7.5" r=".22" fill="#fff" opacity=".5"/>
+          <circle cx="2.5" cy="8" r=".2" fill="#ffd0d0" opacity=".5"/>
+        </pattern>
+        <linearGradient id="maple" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#d7ad66"/><stop offset=".5" stop-color="#f2d59c"/><stop offset="1" stop-color="#d9b26c"/>
+        </linearGradient>
+        <linearGradient id="board" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#121010"/><stop offset=".5" stop-color="#2a2624"/><stop offset="1" stop-color="#121010"/>
+        </linearGradient>
+        <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fafafa"/><stop offset=".5" stop-color="#9aa0a6"/><stop offset="1" stop-color="#e6e8ea"/>
+        </linearGradient>
+        <radialGradient id="knobGrad" cx=".35" cy=".3" r=".8">
+          <stop offset="0" stop-color="#4a4a4e"/><stop offset=".6" stop-color="#1a1a1c"/><stop offset="1" stop-color="#050506"/>
+        </radialGradient>
+        <radialGradient id="ledOn" cx=".5" cy=".5" r=".5">
+          <stop offset="0" stop-color="#ffffff"/><stop offset=".4" stop-color="#ff5a6a"/><stop offset="1" stop-color="#ff2040" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="puGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a40"/><stop offset=".25" stop-color="#232327"/><stop offset="1" stop-color="#141416"/></linearGradient>
+        <radialGradient id="contour"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+        <clipPath id="bodyClip"><path id="bodyClipPath"/></clipPath>
+      </defs>
+      <g id="world"></g>
+      <rect id="hoverBox" fill="none" stroke="var(--accent)" stroke-opacity=".5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" stroke-width="1.5" rx="3" visibility="hidden" pointer-events="none"/>
+      <rect id="selBox" fill="none" stroke="var(--accent)" vector-effect="non-scaling-stroke" stroke-width="2" rx="3" visibility="hidden" pointer-events="none"/>
+    </svg>
+  </div>
+  <aside class="panel" id="panel" aria-live="polite"></aside>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+/* ---------- geometry ---------- */
+const NS='http://www.w3.org/2000/svg';
+const CX=300, NUT=250, SCALE=820, NECK_END=860, W0=54, W1=72, SADDLE=1070;
+const MM=SCALE/648; // units per mm (25.5" = 648 mm)
+const fretY=n=>NUT+SCALE*(1-Math.pow(2,-n/12));
+const halfW=y=>(W0+(W1-W0)*(y-NUT)/(NECK_END-NUT))/2;
+const nutX=i=>CX+(i-2.5)*9;
+const sadX=i=>CX+(i-2.5)*13.26;
+const strX=(i,y)=>nutX(i)+(sadX(i)-nutX(i))*(y-NUT)/(SADDLE-NUT);
+function el(tag,attrs={},parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+const world=document.getElementById('world');
+const part=(key)=>el('g',{class:'part','data-part':key},world);
+
+const BODY="M296.5 790.8C304.6 794.6 328.3 804.4 335.1 809.7C341.9 815.0 335.0 818.6 337.3 822.4C339.6 826.1 345.0 829.7 348.9 832.2C352.8 834.7 356.5 836.4 360.5 837.6C364.5 838.8 367.5 840.0 373.1 839.2C378.7 838.4 388.7 835.2 393.9 833.0C399.1 830.8 401.3 828.5 404.2 826.1C407.1 823.8 409.0 821.4 411.0 818.9C413.0 816.4 414.4 814.5 416.1 810.9C417.8 807.3 419.6 804.4 421.1 797.1C422.6 789.8 423.4 773.2 425.0 767.1C426.6 761.0 428.4 761.8 430.7 760.2C433.0 758.6 436.1 757.8 438.8 757.5C441.5 757.2 444.0 757.4 446.8 758.5C449.6 759.6 453.1 761.6 455.8 764.2C458.5 766.8 460.9 768.3 463.2 774.0C465.5 779.7 468.9 788.8 469.9 798.2C470.9 807.6 470.1 820.6 469.0 830.4C467.9 840.2 467.1 843.6 463.0 856.9C458.9 870.1 448.2 898.6 444.7 909.9C441.2 921.2 442.6 920.1 442.2 924.9C441.8 929.7 441.1 932.0 442.2 938.7C443.3 945.4 442.3 948.7 448.9 965.2C455.5 981.7 474.4 1019.8 481.9 1037.8C489.4 1055.8 490.5 1059.7 493.7 1073.5C496.9 1087.3 499.8 1109.6 501.0 1120.7C502.2 1131.8 501.6 1133.2 501.0 1140.3C500.4 1147.4 498.9 1156.8 497.4 1163.3C495.9 1169.8 494.2 1174.4 492.1 1179.4C490.0 1184.4 487.8 1188.6 485.0 1193.2C482.2 1197.8 479.0 1202.6 475.1 1207.1C471.2 1211.6 468.4 1215.3 461.8 1220.2C455.2 1225.1 445.5 1231.9 435.3 1236.6C425.1 1241.3 414.4 1245.2 400.8 1248.3C387.2 1251.4 370.2 1253.8 353.6 1255.4C337.0 1257.0 320.1 1258.6 301.3 1258.1C282.5 1257.6 255.0 1254.6 240.7 1252.6C226.4 1250.6 224.0 1248.9 215.4 1246.2C206.8 1243.5 197.0 1239.7 188.9 1236.2C180.8 1232.7 173.2 1228.5 167.0 1225.0C160.8 1221.5 159.2 1221.2 152.0 1215.0C144.8 1208.8 129.9 1194.0 123.9 1187.5C117.9 1181.0 118.5 1180.6 115.8 1176.0C113.1 1171.4 110.3 1167.1 107.7 1159.8C105.1 1152.5 101.5 1141.4 99.9 1132.2C98.3 1123.0 97.2 1114.6 97.9 1104.6C98.6 1094.6 101.2 1082.3 103.8 1072.3C106.4 1062.3 106.0 1062.5 113.5 1044.7C121.0 1026.9 141.6 982.9 148.9 965.2C156.2 947.5 155.6 947.2 157.6 938.7C159.6 930.2 160.5 922.2 160.8 914.5C161.1 906.8 160.3 898.9 159.4 892.6C158.5 886.3 160.4 890.9 155.3 876.5C150.2 862.1 134.2 822.4 128.6 806.3C123.0 790.2 123.3 787.7 121.6 779.8C119.9 771.9 118.8 768.8 118.6 759.0C118.4 749.2 118.7 731.5 120.4 721.0C122.1 710.5 125.2 702.5 128.7 695.7C132.2 688.9 138.9 683.0 141.6 680.0C144.3 677.0 143.0 678.0 145.1 677.4C147.2 676.8 149.9 675.9 154.3 676.3C158.7 676.7 168.3 677.7 171.7 679.6C175.1 681.5 173.8 680.9 174.7 687.6C175.6 694.3 176.2 712.6 177.0 719.9C177.8 727.2 177.7 726.2 179.6 731.4C181.5 736.6 185.1 745.7 188.2 751.0C191.3 756.3 194.7 760.2 198.1 763.4C201.5 766.6 205.1 768.7 208.4 770.4C211.7 772.1 213.8 773.0 217.7 773.8C221.5 774.6 226.9 775.6 231.5 775.2C236.1 774.8 236.1 769.6 245.3 771.5C254.5 773.4 278.0 783.4 286.5 786.6C295.0 789.8 288.4 786.9 296.5 790.8Z";
+const GUARD="M448.6 780.6C449.8 783.1 453.9 789.5 455.2 795.9C456.4 802.3 456.8 810.6 456.1 818.9C455.4 827.1 455.2 831.9 451.1 845.4C447.0 858.9 435.5 887.1 431.5 899.6C427.5 912.1 428.2 913.8 427.3 920.3C426.4 926.8 426.0 933.5 426.1 938.7C426.2 943.9 426.3 945.2 427.8 951.4C429.3 957.5 428.3 958.5 435.3 975.6C442.3 992.7 462.3 1035.1 469.9 1053.9C477.5 1072.7 478.4 1078.4 480.7 1088.4C483.0 1098.4 483.5 1108.4 483.7 1113.8C483.9 1119.2 482.8 1118.8 481.7 1120.7C480.6 1122.6 478.6 1124.3 476.8 1125.3C475.0 1126.2 473.1 1126.5 471.0 1126.4C468.9 1126.3 473.3 1131.0 464.1 1124.5C454.9 1118.0 426.6 1095.0 415.7 1087.3C404.8 1079.6 404.4 1080.8 398.5 1078.4C392.6 1076.0 386.7 1074.4 380.0 1073.1C373.3 1071.8 362.3 1070.4 358.3 1070.5C354.3 1070.6 356.5 1071.8 356.0 1073.5C355.5 1075.2 356.0 1079.5 355.4 1081.0C354.8 1082.5 369.0 1082.5 352.4 1082.7C335.8 1083.0 272.8 1083.5 255.8 1082.5C238.9 1081.5 254.4 1078.2 250.7 1076.7C247.0 1075.2 238.8 1075.7 233.8 1073.6C228.8 1071.5 224.4 1068.8 220.6 1064.2C216.8 1059.6 212.9 1051.8 210.7 1045.8C208.5 1039.8 207.9 1033.9 207.3 1028.5C206.7 1023.1 206.7 1019.4 207.3 1013.6C208.0 1007.9 206.6 1008.0 211.2 994.0C215.8 980.0 229.5 946.2 234.6 929.5C239.7 912.8 240.6 905.7 241.8 893.8C243.0 881.9 243.3 871.9 241.8 858.1C240.3 844.3 233.8 819.7 232.6 810.9C231.4 802.1 233.2 806.6 234.4 805.4C235.6 804.2 236.7 803.4 239.5 803.5C242.3 803.6 235.8 805.8 251.1 806.3C266.4 806.8 317.7 805.8 331.5 806.4C345.3 807.0 333.6 803.4 334.0 809.7C334.4 816.0 333.6 837.1 334.0 844.3C334.4 851.5 335.2 851.3 336.1 853.0C337.1 854.7 336.8 854.3 339.7 854.6C342.6 854.9 348.4 854.0 353.6 854.8C358.8 855.6 365.8 858.5 370.8 859.2C375.8 859.9 379.3 859.6 383.5 859.2C387.7 858.8 391.6 858.1 396.2 856.6C400.8 855.1 406.5 852.7 411.1 850.0C415.7 847.3 420.0 843.8 423.8 840.3C427.6 836.8 430.5 834.2 433.7 829.3C436.9 824.4 440.9 816.7 443.1 810.9C445.4 805.1 446.3 799.7 447.2 794.7C448.1 789.7 448.1 783.1 448.3 780.8C448.5 778.4 447.5 778.1 448.6 780.6Z";
+const HEAD="M327.2 14.4C328.2 14.4 330.5 14.0 333.0 14.2C335.5 14.4 339.3 15.0 342.1 15.7C344.9 16.4 347.0 17.1 349.7 18.4C352.4 19.7 356.2 21.8 358.3 23.3C360.4 24.8 361.0 26.0 362.0 27.3C363.0 28.6 363.6 29.9 364.2 31.3C364.8 32.8 365.1 34.3 365.4 36.0C365.6 37.7 366.0 39.2 365.7 41.4C365.4 43.6 365.3 45.8 363.8 49.4C362.3 53.0 358.9 58.3 356.9 63.2C354.9 68.1 353.0 74.9 351.9 78.8C350.8 82.7 350.6 84.4 350.0 86.4C349.4 88.5 348.6 89.0 348.1 91.1C347.6 93.1 347.4 94.8 347.2 98.7C347.0 102.6 346.8 110.7 346.8 114.3C346.8 117.9 346.9 117.7 347.2 120.5C347.5 123.3 347.3 125.0 348.8 131.0C350.3 137.1 353.9 149.3 356.2 156.8C358.5 164.3 361.4 171.1 362.5 176.0C363.6 180.9 363.1 184.3 363.0 186.5C362.9 188.7 362.5 188.4 361.8 189.3C361.1 190.2 361.1 190.3 358.9 192.2C356.7 194.1 351.9 197.7 348.7 200.6C345.5 203.5 342.7 206.3 339.9 209.7C337.1 213.1 333.9 217.6 331.8 221.0C329.7 224.4 328.3 227.3 327.4 230.0C326.4 232.7 326.3 234.2 326.1 236.9C325.9 239.6 326.3 244.3 326.1 246.0C325.9 247.7 326.2 247.2 325.0 247.1C323.8 247.0 321.2 245.5 318.9 245.3C316.5 245.1 313.8 246.1 310.9 246.0C308.0 245.9 304.0 244.8 301.8 244.6C299.6 244.4 298.7 244.7 297.5 245.0C296.3 245.3 295.5 246.3 294.6 246.5C293.7 246.7 293.1 246.0 292.0 246.0C290.9 246.0 288.7 246.0 287.7 246.4C286.7 246.8 286.6 248.7 286.0 248.7C285.4 248.7 285.0 247.0 284.4 246.6C283.8 246.2 283.4 246.0 282.6 246.0C281.8 246.0 280.6 246.2 279.7 246.5C278.8 246.8 278.1 248.0 277.5 248.0C276.9 248.0 276.7 247.0 276.3 246.7C275.9 246.4 275.5 246.1 275.0 246.4C274.5 246.7 273.6 248.0 273.2 248.4C272.8 248.8 272.6 249.6 272.3 248.6C272.0 247.6 271.8 244.8 271.1 242.4C270.4 240.0 269.6 236.8 268.2 234.0C266.8 231.2 265.4 228.8 262.9 225.8C260.4 222.8 255.1 218.0 253.3 215.9C251.5 213.8 252.6 214.2 252.3 213.0C252.1 211.8 251.8 210.4 251.8 209.0C251.8 207.6 251.7 207.4 252.4 204.7C253.1 202.0 255.4 195.7 256.2 193.0C257.0 190.3 256.6 189.5 257.1 188.4C257.6 187.3 258.9 187.4 259.3 186.5C259.7 185.6 259.2 184.2 259.3 182.9C259.4 181.6 259.5 181.1 260.2 178.9C260.9 176.7 262.7 171.9 263.3 169.8C263.9 167.8 263.6 167.5 263.9 166.6C264.2 165.7 264.7 165.5 265.0 164.4C265.3 163.3 265.1 161.1 265.7 160.0C266.2 158.9 267.9 158.8 268.3 157.8C268.7 156.8 267.9 155.2 268.0 153.9C268.1 152.6 268.2 151.4 268.6 149.9C269.1 148.4 270.1 147.2 270.7 145.2C271.3 143.2 271.8 139.5 272.3 137.9C272.8 136.3 273.3 136.6 273.6 135.4C273.9 134.2 273.8 131.8 274.3 130.8C274.8 129.8 276.0 130.2 276.4 129.2C276.8 128.2 276.2 125.7 276.4 124.7C276.6 123.7 276.7 125.7 277.5 123.0C278.3 120.3 280.5 111.3 281.3 108.5C282.1 105.7 282.1 107.3 282.4 106.3C282.7 105.3 282.6 103.4 283.0 102.4C283.4 101.4 284.2 102.1 284.8 100.2C285.4 98.3 285.2 94.9 286.3 91.1C287.4 87.3 290.2 80.3 291.1 77.3C292.0 74.3 291.4 74.0 291.9 73.0C292.3 72.0 293.4 72.3 293.8 71.2C294.2 70.1 293.7 68.3 294.1 66.3C294.5 64.3 295.3 61.8 296.1 59.2C296.9 56.6 298.1 52.3 298.8 50.5C299.5 48.7 299.8 49.4 300.1 48.3C300.5 47.2 300.4 45.1 300.9 44.0C301.4 42.9 302.5 43.0 302.9 41.8C303.3 40.6 302.7 38.8 303.2 36.7C303.7 34.6 304.9 31.4 306.1 29.1C307.3 26.8 308.9 24.6 310.5 22.9C312.1 21.1 314.0 19.7 315.6 18.6C317.2 17.5 318.1 17.0 320.0 16.3C321.9 15.6 325.6 14.7 326.8 14.4C328.0 14.1 326.2 14.4 327.2 14.4Z";
+document.getElementById('bodyClipPath').setAttribute('d',BODY);
+
+/* shadow */
+el('path',{d:BODY,fill:'#000',opacity:.35,filter:'url(#shadow)',transform:'translate(10 14)'},world);
+el('path',{d:HEAD,fill:'#000',opacity:.25,filter:'url(#shadow)',transform:'translate(8 10)'},world);
+
+/* ---------- body ---------- */
+{const g=part('body');
+ el('path',{d:BODY,fill:'url(#bodyGrad)',stroke:'#3a0004','stroke-width':1.5},g);
+ el('rect',{x:60,y:640,width:480,height:640,fill:'url(#flake)','clip-path':'url(#bodyClip)'},g);
+ el('rect',{x:60,y:640,width:480,height:640,fill:'url(#bodySheen)','clip-path':'url(#bodyClip)'},g);
+ el('ellipse',{cx:150,cy:880,rx:70,ry:120,fill:'url(#contour)',transform:'rotate(-25 150 880)'},el('g',{'clip-path':'url(#bodyClip)'},g));
+ el('path',{d:BODY,fill:'none',stroke:'#ff8a8a','stroke-opacity':.35,'stroke-width':2,transform:'translate(300 980) scale(.975) translate(-300 -980)'},g);}
+
+/* ---------- pickguard ---------- */
+{const g=part('pickguard');
+ el('path',{d:GUARD,fill:'#e8e8e8',stroke:'#0b0b0c','stroke-width':1.2},g);
+ const pg=el('path',{d:GUARD,fill:'#0d0d0f',transform:'translate(300 1000) scale(.985) translate(-300 -1000)'},g);
+ el('path',{d:GUARD,fill:'none',stroke:'#fff','stroke-opacity':.06,'stroke-width':6,transform:'translate(300 1000) scale(.95) translate(-300 -1000)'},g);
+ // screws along the edge
+ const len=pg.getTotalLength(), n=11;
+ for(let k=0;k<n;k++){const p=pg.getPointAtLength(len*(k+.3)/n);
+   const dx=315-p.x, dy=1000-p.y, d=Math.hypot(dx,dy); const sx=p.x+dx/d*7, sy=p.y+dy/d*7;
+   if(sy>1040&&sx>240&&sx<362) continue;
+   screw(g,sx,sy,2.2,'#111');}
+}
+function screw(g,x,y,r,fill){el('circle',{cx:x,cy:y,r,fill,stroke:'#555','stroke-width':.35},g);
+ el('path',{d:`M${x-r*.6} ${y}H${x+r*.6}M${x} ${y-r*.6}V${y+r*.6}`,stroke:'#666','stroke-width':.35},g);}
+
+/* ---------- neck ---------- */
+{const g=part('neck');
+ el('path',{d:`M${CX-halfW(240)-1.6} 240L${CX-halfW(NECK_END)-1.6} ${NECK_END}Q${CX} 868 ${CX+halfW(NECK_END)+1.6} ${NECK_END}L${CX+halfW(240)+1.6} 240Z`,fill:'url(#maple)',stroke:'#9b7a40','stroke-width':.5},g);}
+
+/* ---------- headstock ---------- */
+{const g=part('headstock');
+ el('path',{d:HEAD,fill:'url(#maple)',stroke:'#a07c3e','stroke-width':.8},g);
+ const hc=el('clipPath',{id:'headClip'},document.querySelector('#guitar defs'));el('path',{d:HEAD},hc);const grain=el('g',{'clip-path':'url(#headClip)'},g);
+ for(let k=0;k<9;k++) el('path',{d:`M${270+k*9} 20C${280+k*9} 90 ${262+k*9} 160 ${276+k*8} 248`,fill:'none',stroke:'#a8813f','stroke-opacity':.18,'stroke-width':.6},grain);
+ const t=el('text',{x:0,y:0,'font-family':'Yellowtail, "Brush Script MT", cursive','font-size':26,fill:'#141414',transform:'translate(333 196) rotate(-72)'},g);t.textContent='Tagima';
+ const s=el('text',{x:0,y:0,'font-family':'system-ui,sans-serif','font-size':6.5,'font-weight':700,'letter-spacing':1.6,fill:'#141414',transform:'translate(344 66) rotate(-80)'},g);s.textContent='SIXMART';
+}
+
+/* ---------- fretboard + frets ---------- */
+{const g=part('fretboard');
+ el('path',{d:`M${CX-W0/2} ${NUT}L${CX-W1/2} ${NECK_END}Q${CX} 860 ${CX+W1/2} ${NECK_END}L${CX+W0/2} ${NUT}Z`,fill:'url(#board)'},g);
+ for(let k=0;k<14;k++){el('line',{x1:CX-26+k*4,y1:NUT,x2:CX-35+k*5.3,y2:NECK_END,stroke:'#3a3330','stroke-opacity':.35,'stroke-width':.4},g);}
+ [3,5,7,9,15,17,19,21].forEach(n=>{const y=(fretY(n-1)+fretY(n))/2;el('circle',{cx:CX,cy:y,r:3.6,fill:'#f4f1ea',stroke:'#c9c2b4','stroke-width':.4},g);});
+ {const y=(fretY(11)+fretY(12))/2;[-13,13].forEach(o=>el('circle',{cx:CX+o,cy:y,r:3.6,fill:'#f4f1ea',stroke:'#c9c2b4','stroke-width':.4},g));}
+ const fg=part('frets');
+ for(let n=1;n<=22;n++){const y=fretY(n),h=halfW(y);
+   el('line',{x1:CX-h,y1:y,x2:CX+h,y2:y,stroke:'#8e9297','stroke-width':1.9},fg);
+   el('line',{x1:CX-h,y1:y-.35,x2:CX+h,y2:y-.35,stroke:'#f1f3f5','stroke-width':.6},fg);
+   const lab=el('text',{x:CX-h-4,y:y-((y-fretY(n-1))/2)+1.8,'font-size':4.6,'text-anchor':'end',fill:'#000','fill-opacity':.0,class:'fretnum'},fg);lab.textContent=n;}
+}
+
+/* ---------- nut ---------- */
+{const g=part('nut');
+ el('rect',{x:CX-W0/2-1,y:NUT-5,width:W0+2,height:5.5,rx:.8,fill:'#efe9dc',stroke:'#b5ab96','stroke-width':.4},g);
+ for(let i=0;i<6;i++) el('rect',{x:nutX(i)-.8,y:NUT-5,width:1.6,height:2,fill:'#9d9382'},g);}
+
+/* ---------- tuners ---------- */
+const POST=i=>({x:273.5+i*8.9,y:201-i*29.9});
+{const g=part('tuners');
+ for(let i=0;i<6;i++){const p=POST(i);const bx=p.x-30,by=p.y-19;
+   el('line',{x1:p.x,y1:p.y,x2:bx,y2:by,stroke:'#1a1a1a','stroke-width':3.6},g);
+   el('path',{d:'M-9 -7L7 -4Q9 -4 9 -2L9 2Q9 4 7 4L-9 7Q-11 7 -11 5L-11 -5Q-11 -7 -9 -7Z',fill:'#0e0e0f',stroke:'#2c2c2e','stroke-width':.6,transform:`translate(${bx} ${by}) rotate(32.3)`},g);
+   el('path',{d:'M-8 -4Q0 -5.5 6 -3',fill:'none',stroke:'#fff','stroke-opacity':.25,'stroke-width':.8,transform:`translate(${bx} ${by}) rotate(32.3)`},g);
+   el('circle',{cx:p.x,cy:p.y,r:6.4,fill:'#111',stroke:'#333','stroke-width':.5},g);
+   el('circle',{cx:p.x,cy:p.y,r:3.2,fill:'#26262a',stroke:'#4a4a4f','stroke-width':.6},g);
+   el('line',{x1:p.x-1.6,y1:p.y,x2:p.x+1.6,y2:p.y,stroke:'#000','stroke-width':.6},g);
+ }
+ // string tree for B and high E
+ {const g=part('stringtree');el('rect',{x:311,y:131.5,width:12,height:5,rx:2,fill:'#1a1a1a',stroke:'#444','stroke-width':.4},g);screw(g,317,134,1.3,'#222');}
+}
+
+/* ---------- pickups ---------- */
+function poles(g,y){for(let i=0;i<6;i++){el('circle',{cx:strX(i,y),cy:y,r:2.1,fill:'url(#chrome)',stroke:'#666','stroke-width':.3},g);}}
+function single(key,y){const g=part(key);
+ el('rect',{x:CX-44,y:y-11,width:88,height:22,rx:11,fill:'#000',opacity:.6,transform:'translate(1 1.5)'},g);el('rect',{x:CX-44,y:y-11,width:88,height:22,rx:11,fill:'url(#puGrad)',stroke:'#46464c','stroke-width':.7},g);
+ el('rect',{x:CX-42,y:y-9.5,width:84,height:6,rx:3,fill:'#fff',opacity:.05},g);
+ poles(g,y);}
+single('neckpu',875); single('midpu',951);
+{const g=part('bridgepu'),y=1022;
+ el('rect',{x:CX-42,y:y-20.5,width:84,height:41,rx:5,fill:'#000',opacity:.6,transform:'translate(1 1.5)'},g);el('rect',{x:CX-42,y:y-20.5,width:84,height:41,rx:5,fill:'url(#puGrad)',stroke:'#46464c','stroke-width':.7},g);
+ el('rect',{x:CX-39,y:y-18,width:78,height:16,rx:2.5,fill:'#1b1b1f',stroke:'#3a3a40','stroke-width':.5},g);
+ el('rect',{x:CX-39,y:y+2,width:78,height:16,rx:2.5,fill:'#1b1b1f',stroke:'#3a3a40','stroke-width':.5},g);
+ poles(g,y-12); poles(g,y+12);
+ screw(g,CX-46,y,2,'#111'); screw(g,CX+46,y,2,'#111');}
+
+/* ---------- control plate (clear Sixmart sticker) ---------- */
+const VOL={x:387,y:1022,r:12}, TONE={x:425,y:1060,r:12}, DR={x:465,y:1098}, TOG={x:414,y:1033}, LED={x:402,y:1048};
+const SEL={x:423,y:1001,dx:.63,dy:.78,len:42};
+const RJ={x:450,y:1066},PJ={x:438,y:1081};
+{const cp=el('clipPath',{id:'guardClip'},document.querySelector('#guitar defs'));el('path',{d:GUARD,transform:'translate(300 1000) scale(.985) translate(-300 -1000)'},cp);
+ const g=part('ctlplate');g.setAttribute('clip-path','url(#guardClip)');
+ const PL=`M${VOL.x-16} ${VOL.y-12}L${VOL.x+12} ${VOL.y-18}L${TOG.x+12} ${TOG.y-10}L${RJ.x+10} ${RJ.y-8}L${DR.x+8} ${DR.y-14}L${DR.x+10} ${DR.y+8}L${DR.x-8} ${DR.y+14}L${PJ.x-6} ${PJ.y+8}L${TONE.x-14} ${TONE.y+4}L${LED.x-10} ${LED.y+8}L${VOL.x-18} ${VOL.y+8}Z`;el('path',{d:PL,fill:'#202227',stroke:'#202227','stroke-width':10,'stroke-linejoin':'round'},g);el('path',{d:PL,fill:'none',stroke:'#c9d0da','stroke-opacity':.3,'stroke-width':11,'stroke-linejoin':'round'},g);el('path',{d:PL,fill:'#202227',stroke:'#202227','stroke-width':9.4,'stroke-linejoin':'round'},g);
+ const t=el('text',{'font-family':'system-ui,sans-serif','font-size':4.6,'font-weight':300,'letter-spacing':1,fill:'#d7dce4',transform:`translate(${VOL.x-22} ${VOL.y-11}) rotate(-38)`},g);t.textContent='SIXMART';
+ const t2=el('text',{'font-family':'Yellowtail,cursive','font-size':4.4,fill:'#d7dce4',transform:`translate(${VOL.x-18} ${VOL.y-7}) rotate(-38)`},g);t2.textContent='Tagima';
+}
+function label(txt,x,y,size=2.6,rot=-38,anchor='start'){const t=el('text',{'font-family':'system-ui,sans-serif','font-size':size,'font-weight':700,fill:'#e9edf2','text-anchor':anchor,transform:`translate(${x} ${y}) rotate(${rot})`},world);t.textContent=txt;t.setAttribute('pointer-events','none');return t;}
+
+/* ---------- knobs ---------- */
+function knob(g,cx,cy,r){
+ el('circle',{cx,cy,r:r+1.2,fill:'#000',opacity:.5},g);
+ const rot=el('g',{},g);
+ el('circle',{cx,cy,r,fill:'url(#knobGrad)',stroke:'#000','stroke-width':.5},rot);
+ for(let k=0;k<36;k++){const a=k/36*Math.PI*2;el('line',{x1:cx+Math.cos(a)*(r-2.2),y1:cy+Math.sin(a)*(r-2.2),x2:cx+Math.cos(a)*r,y2:cy+Math.sin(a)*r,stroke:'#3c3c40','stroke-width':.55},rot);}
+ el('circle',{cx,cy,r:r*.62,fill:'#202023',stroke:'#0a0a0b','stroke-width':.5},rot);
+ el('line',{x1:cx,y1:cy-r*.95,x2:cx,y2:cy-r*.7,stroke:'#f2efe6','stroke-width':1.4,'stroke-linecap':'round'},rot);
+ return rot;}
+
+
+const parts={};
+{const g=part('volume'); parts.volRing=el('circle',{cx:VOL.x,cy:VOL.y,r:VOL.r+3,fill:'none',stroke:'url(#chrome)','stroke-width':1.6,opacity:0},g);
+ parts.vol=knob(g,VOL.x,VOL.y,VOL.r);}
+label('PUSH PULL',VOL.x+1,VOL.y-16,1.8); label('EFFECTS ON',VOL.x+2,VOL.y-13.3,1.8); label('VOLUME',VOL.x+9.5,VOL.y-11,2);
+{const g=part('tone'); parts.tone=knob(g,TONE.x,TONE.y,TONE.r);} label('TONE',TONE.x+10,TONE.y-15,2.4);
+{const g=part('delayreverb');
+ el('path',{d:`M${DR.x-18} ${DR.y-3.5}A18 18 0 0 1 ${DR.x+12} ${DR.y-13.5}L${DR.x+9} ${DR.y-10}A13.5 13.5 0 0 0 ${DR.x-13.4} ${DR.y-2.6}Z`,fill:'#eef0f2'},g);
+ el('path',{d:`M${DR.x+13.5} ${DR.y-12}A18 18 0 0 1 ${DR.x+17.5} ${DR.y+4.5}L${DR.x+13} ${DR.y+3.5}A13.5 13.5 0 0 0 ${DR.x+10} ${DR.y-9}Z`,fill:'#2a2a2e'},g);
+ const t=el('text',{'font-family':'system-ui,sans-serif','font-size':2.5,'font-weight':800,fill:'#111',transform:`translate(${DR.x-13} ${DR.y-5}) rotate(-38)`},g);t.textContent='DELAY';
+ const t2=el('text',{'font-family':'system-ui,sans-serif','font-size':2.3,'font-weight':800,fill:'#e9edf2',transform:`translate(${DR.x-19} ${DR.y-8}) rotate(-48)`},g);t2.textContent='REVERB ON TOP';
+ parts.delay=knob(g,DR.x,DR.y,12);
+ const inner=el('g',{},g);
+ el('circle',{cx:DR.x,cy:DR.y,r:7.5,fill:'#000',opacity:.6},g);
+ parts.reverb=knob(g,DR.x,DR.y,6.8);}
+{const g=part('fxtoggle');
+ el('circle',{cx:TOG.x,cy:TOG.y,r:3.4,fill:'url(#chrome)',stroke:'#555','stroke-width':.4},g);
+ el('circle',{cx:TOG.x,cy:TOG.y,r:1.7,fill:'#777'},g);
+ parts.togLever=el('line',{x1:TOG.x,y1:TOG.y,x2:TOG.x,y2:TOG.y-7,stroke:'url(#chrome)','stroke-width':1.6,'stroke-linecap':'round'},g);
+ parts.togTip=el('circle',{cx:TOG.x,cy:TOG.y-7,r:1.4,fill:'#d9dde1',stroke:'#666','stroke-width':.3},g);}
+const TOGANG={dist:25,clean:70,over:115};
+[['DIST','dist'],['CLEAN','clean'],['OVER','over']].forEach(([t,k])=>{const a=TOGANG[k]*Math.PI/180;label(t,TOG.x+Math.sin(a)*9.5,TOG.y-Math.cos(a)*9.5+1,1.9,-30);});
+{const g=part('led');
+ parts.ledGlow=el('circle',{cx:LED.x,cy:LED.y,r:7,fill:'url(#ledOn)',opacity:0},g);
+ el('circle',{cx:LED.x,cy:LED.y,r:2.2,fill:'#d8dadc',stroke:'#888','stroke-width':.3},g);
+ parts.ledCore=el('circle',{cx:LED.x,cy:LED.y,r:1.4,fill:'#f4f4f4',opacity:.6},g);}
+function jack(key,x,y){const g=part(key);
+ el('circle',{cx:x,cy:y,r:4.4,fill:'url(#chrome)',stroke:'#444','stroke-width':.4},g);
+ el('circle',{cx:x,cy:y,r:3.1,fill:'#2a2a2c'},g);
+ el('circle',{cx:x,cy:y,r:1.6,fill:'#050505'},g);}
+jack('recjack',RJ.x,RJ.y); label('OUT REC',RJ.x-6,RJ.y-8,2.1,-60); label('IN AUDIO',RJ.x+1,RJ.y-8,2.1,-60);
+jack('phones',PJ.x,PJ.y); {const t=label('🎧',PJ.x-11,PJ.y+3,4.5,0);}
+{const g=part('selector');
+ const x1=SEL.x-SEL.dx*SEL.len/2,y1=SEL.y-SEL.dy*SEL.len/2,x2=SEL.x+SEL.dx*SEL.len/2,y2=SEL.y+SEL.dy*SEL.len/2;
+ el('line',{x1,y1,x2,y2,stroke:'#000','stroke-width':6,'stroke-linecap':'round'},g);
+ el('line',{x1,y1,x2,y2,stroke:'#b6babf','stroke-width':3,'stroke-linecap':'round'},g);
+ el('line',{x1,y1,x2,y2,stroke:'#151515','stroke-width':1.6,'stroke-linecap':'round'},g);
+ parts.selTip=el('g',{},g);
+ el('ellipse',{cx:0,cy:0,rx:4.2,ry:5.2,fill:'#0c0c0d',stroke:'#2e2e31','stroke-width':.6},parts.selTip);
+ el('ellipse',{cx:-1.2,cy:-1.8,rx:1.6,ry:1.2,fill:'#fff',opacity:.25},parts.selTip);}
+
+/* ---------- output jack, strap buttons ---------- */
+{const g=part('output');
+ const JX=407,JY=1146;el('ellipse',{cx:JX,cy:JY,rx:35,ry:27,fill:'#0d0d0e',stroke:'#2e2e31','stroke-width':.8,transform:`rotate(35 ${JX} ${JY})`},g);
+ el('circle',{cx:JX,cy:JY,r:6.2,fill:'url(#chrome)',stroke:'#333','stroke-width':.4},g);
+ el('circle',{cx:JX,cy:JY,r:3.6,fill:'#050505'},g);
+ screw(g,JX-26*Math.cos(.61),JY-26*Math.sin(.61),1.6,'#111'); screw(g,JX+26*Math.cos(.61),JY+26*Math.sin(.61),1.6,'#111');}
+{const g=part('strap'); [[213,671],[304,1272]].forEach(([x,y])=>{el('circle',{cx:x,cy:y,r:5,fill:'#0d0d0e',stroke:'#333','stroke-width':.6},g);el('circle',{cx:x,cy:y,r:2.6,fill:'#26262a'},g);});}
+
+/* ---------- bridge ---------- */
+{const g=part('bridge');
+ el('rect',{x:256,y:1050,width:101,height:52,rx:4,fill:'#0f0f11',stroke:'#2a2a2d','stroke-width':.8},g);
+ for(let k=0;k<6;k++) screw(g,262+k*17.8,1056,1.8,'#111');
+ const off=[8,6,4,5,3,0];
+ for(let i=0;i<6;i++){const x=sadX(i),y=SADDLE+off[i];
+   el('rect',{x:x-5.5,y:y-6,width:11,height:14,rx:1.4,fill:'#1b1b1e',stroke:'#3a3a3e','stroke-width':.5},g);
+   el('circle',{cx:x-3,cy:y+4,r:1,fill:'#555'},g); el('circle',{cx:x+3,cy:y+4,r:1,fill:'#555'},g);
+   el('line',{x1:x,y1:y+8,x2:x,y2:1099,stroke:'#2c2c30','stroke-width':.9},g);}
+ el('path',{d:'M352 1070C372 1064 379 1030 377 990C376 950 373 915 372 882',fill:'none',stroke:'#000','stroke-opacity':.4,'stroke-width':4.2,'stroke-linecap':'round',transform:'translate(1 1.5)'},g);
+ el('path',{d:'M352 1070C372 1064 379 1030 377 990C376 950 373 915 372 882',fill:'none',stroke:'#151517','stroke-width':2.8,'stroke-linecap':'round'},g);
+ el('path',{d:'M352 1070C372 1064 379 1030 377 990C376 950 373 915 372 882',fill:'none',stroke:'#6a6a70','stroke-width':.7,'stroke-linecap':'round',transform:'translate(-.6 0)'},g);
+ el('circle',{cx:372,cy:878,r:3.6,fill:'#141416',stroke:'#3a3a3e','stroke-width':.5},g);el('circle',{cx:371,cy:877,r:1.2,fill:'#fff',opacity:.25},g);
+ parts.saddleOff=off;}
+
+/* ---------- strings ---------- */
+{const g=part('strings');
+ const w=[1.5,1.3,1.1,.85,.7,.58], col=['#c5b48f','#c5b48f','#c5b48f','#d9dcdf','#d9dcdf','#d9dcdf'];
+ for(let i=0;i<6;i++){const p=POST(i), sy=SADDLE+parts.saddleOff[i];
+   const pts=[[p.x,p.y],...(i>=4?[[314+(i-4)*4,134]]:[]),[nutX(i),NUT-2],[sadX(i),sy],[sadX(i),1100]];
+   el('polyline',{points:pts.map(q=>q.join(',')).join(' '),fill:'none',stroke:'#000','stroke-opacity':.35,'stroke-width':w[i]+.8,transform:'translate(.8 .8)'},g);
+   el('polyline',{points:pts.map(q=>q.join(',')).join(' '),fill:'none',stroke:col[i],'stroke-width':w[i]},g);
+   if(i<3) el('polyline',{points:pts.map(q=>q.join(',')).join(' '),fill:'none',stroke:'#7c6c4c','stroke-width':w[i],'stroke-dasharray':'.35 .35'},g);
+   el('circle',{cx:sadX(i),cy:1100,r:1.6,fill:'url(#chrome)'},g);}
+}
+
+/* ---------- content ---------- */
+const S={spec:'listing',photo:'photo',ref:'reference',inferred:'inferred'};
+const SPEC_URL='https://avlgear.com/products/tagima-sixmart-electric-guitar-with-maple-neck-and-basswood-body';
+const TUNING=[['6 · E2','82.41 Hz'],['5 · A2','110.00 Hz'],['4 · D3','146.83 Hz'],['3 · G3','196.00 Hz'],['2 · B3','246.94 Hz'],['1 · E4','329.63 Hz']];
+const fretMM=n=>(648*(1-Math.pow(2,-n/12))).toFixed(1)+' mm';
+const PU_HEIGHT=(sc)=>sc?[['Height, bass side','2.4 mm (6/64")','ref','Press the string at the last fret. Measure from the bottom of the string to the top of the pole piece.'],['Height, treble side','2.0 mm (5/64")','ref','Too close gives a weak, wavy sustain on single coils. Too far gives a thin sound.']]
+ :[['Height, bass side','1.6 mm (4/64")','ref','Press the string at the last fret and measure.'],['Height, treble side','1.6 mm (4/64")','ref','Humbuckers sit closer than single coils.']];
+
+const PARTS={
+ headstock:{name:'Headstock',group:'Neck',what:'Strat-style headstock with all six tuners on the bass side.',specs:[['Wood','Maple, natural finish','photo'],['Size','90 × 185 mm from the nut','photo'],['Logo','Tagima script and "SIXMART"','photo']],setup:[['Care','Wipe with a dry cloth after you play','ref']]},
+ tuners:{name:'Tuners',group:'Neck',what:'Six diecast machine heads in a line. The black pegs stick out of the bass side.',specs:[['Type','Diecast','spec'],['Finish','Black','photo']],setup:[['Wraps on the post','2–3 on wound strings, 3–5 on plain strings','ref','Too many wraps can make the tuning slip.'],['Turn direction','Turn the peg away from you to lower the pitch','ref']],tuning:true},
+ stringtree:{name:'String tree',group:'Neck',what:'Holds the B and high E strings down so they press on the nut with enough angle.',specs:[['Strings','B and high E','photo']],setup:[['If the strings ping while tuning','Put a little graphite (pencil lead) under the tree','ref']]},
+ nut:{name:'Nut',group:'Neck',what:'The slotted piece at the end of the fretboard. It sets the string spacing and the height at the first frets.',specs:[['Width','43 mm (1.69")','spec']],setup:[['String height at fret 1','≈ 0.5 mm treble / 0.6 mm bass','ref','Press the string at fret 3 and look at the gap over fret 1. Almost touching is correct.'],['Sticking strings','Graphite in the slots','ref']]},
+ fretboard:{name:'Fretboard',group:'Neck',what:'The dark playing surface with dot markers at frets 3, 5, 7, 9, 12 (double), 15, 17, 19 and 21.',specs:[['Material','Techwood','spec'],['Radius','9.5" (241 mm)','spec'],['Scale length','25.5" (648 mm)','spec'],['Profile','C shape','spec']],setup:[['Cleaning','Dry cloth after each session. Light conditioner when you change strings','ref']]},
+ frets:{name:'Frets',group:'Neck',what:'22 fret wires. Each fret raises the pitch by one semitone. The distances follow the 12th-root-of-2 rule.',specs:[['Count','22','spec'],['Fret 1 from nut',fretMM(1),'inferred'],['Fret 5 from nut',fretMM(5),'inferred'],['Fret 12 from nut',fretMM(12)+' (half the scale)','inferred'],['Fret 22 from nut',fretMM(22),'inferred']],setup:[['Buzz on one fret only','A high fret. Have a tech level it','ref']]},
+ neck:{name:'Neck',group:'Neck',what:'Bolt-on maple neck. A steel truss rod inside it holds against the string tension.',specs:[['Wood','Maple','spec'],['Shape','C','spec']],setup:[['Relief','0.25 mm (0.010")','ref','Put a capo at fret 1, press at the last fret, measure the gap at fret 8.'],['Truss rod','Quarter turn at a time. Clockwise = less relief','ref','Look for the adjust hole at the headstock end or at the neck heel. Wait a few hours after each turn.']]},
+ body:{name:'Body',group:'Body',what:'Double-cutaway solid body in a sparkle finish.',specs:[['Wood','Basswood','spec'],['Size','319 × 466 mm, horn tip to bottom','photo','Measured on the flat photo, scaled by the 25.5" scale length. Strat reference: 324 mm wide, about 460 mm long.'],['Finish','Sparkling Candy Apple','spec'],['Other color','Metallic Deep Silver','spec']],setup:[['Care','Microfiber cloth. Do not use household cleaners on the finish','ref']]},
+ pickguard:{name:'Pickguard',group:'Body',what:'Black pickguard with a white edge line. It holds the pickups, the selector and the controls.',specs:[['Color','Black','spec'],['Size','218 × 273 mm','photo'],['Edge','White ply line','photo']],setup:[]},
+ neckpu:{name:'Neck pickup',group:'Pickups',what:'Single coil next to the neck. Warm and round sound.',specs:[['Type','Single coil','spec'],['Selector','Position 5','inferred']],setup:PU_HEIGHT(true)},
+ midpu:{name:'Middle pickup',group:'Pickups',what:'Single coil in the middle. Thin and clear alone, "quacky" in combinations.',specs:[['Type','Single coil','spec'],['Selector','Position 3','inferred']],setup:PU_HEIGHT(true)},
+ bridgepu:{name:'Bridge humbucker',group:'Pickups',what:'Double coil next to the bridge. The most output and the least hum. Best for overdrive and distortion.',specs:[['Type','Humbucker','spec'],['Selector','Position 1','inferred']],setup:PU_HEIGHT(false)},
+ selector:{name:'Pickup selector',group:'Electronics',what:'5-way lever that selects which pickups play.',specs:[['Positions','5','spec'],['1 (toward bridge)','Bridge humbucker','inferred'],['2','Bridge + middle (wiring varies, often coil split)','inferred'],['3','Middle','inferred'],['4','Middle + neck','inferred'],['5 (toward neck)','Neck','inferred']],setup:[],ctl:'selector'},
+ volume:{name:'Volume · push-pull',group:'Electronics',what:'Master volume. Pull the knob up to turn the built-in effects on. Push it down for a plain guitar signal.',specs:[['Label','"PUSH PULL / EFFECTS ON / VOLUME"','photo']],setup:[],ctl:'volume'},
+ fxtoggle:{name:'Effect mode switch',group:'Electronics',what:'3-way mini toggle that sets the drive of the built-in effects.',specs:[['Positions','DIST · CLEAN · OVER','photo'],['DIST','Distortion','spec'],['OVER','Overdrive','spec'],['CLEAN','No drive. Delay and reverb still work','inferred']],setup:[],ctl:'mode'},
+ led:{name:'Effects LED',group:'Electronics',what:'Indicator next to the volume knob. It shows when the effects circuit is on.',specs:[['Function','Effects on indicator','inferred']],setup:[['Battery','If the LED is dim or off with effects on, check the battery','inferred','A third-party review says the effects need a battery. The manual is not checked.']]},
+ tone:{name:'Tone',group:'Electronics',what:'Master tone. Turn it down to cut the treble.',specs:[['Count on this guitar','1 tone knob','photo'],['Listing says','2 tone','spec','The listing and the photo do not agree. The photo shows one.']],setup:[],ctl:'tone'},
+ delayreverb:{name:'Delay / Reverb',group:'Electronics',what:'Stacked (concentric) knob. The large lower ring sets the DELAY level. The small top cap sets the REVERB level ("REVERB ON TOP").',specs:[['Lower ring','Delay','photo'],['Top cap','Reverb','photo']],setup:[],ctl:'dr'},
+ recjack:{name:'Rec out / Audio in',group:'Electronics',what:'3.5 mm jack labeled OUT REC and IN AUDIO: record to a phone or computer, or play a backing track through the guitar.',specs:[['Size','3.5 mm (P2)','inferred'],['Labels','OUT REC · IN AUDIO','photo']],setup:[['Use','Connect a TRRS phone cable for record + playback','inferred']]},
+ phones:{name:'Headphone out',group:'Electronics',what:'3.5 mm headphone jack. Practice in silence with the effects, without an amp.',specs:[['Size','3.5 mm','inferred'],['Listing','"Headphone output"','spec']],setup:[['Tip','Start with the volume low before you put the headphones on','ref']]},
+ output:{name:'Output jack',group:'Electronics',what:'Main 6.35 mm (1/4") output to an amplifier or pedalboard.',specs:[['Size','6.35 mm (P10)','ref'],['Plate','Black oval','photo']],setup:[['Unplug when done','Many active circuits use power while a cable is in the jack','ref']]},
+ bridge:{name:'Tremolo bridge',group:'Hardware',what:'Black synchronized tremolo with six adjustable saddles. The arm bends the pitch down (and up, if the bridge floats).',specs:[['Type','Tremolo','spec'],['Finish','Black','photo']],setup:[['Action at fret 12','1.6 mm treble / 1.8–2.0 mm bass','ref','Measure from the top of the fret to the bottom of the string.'],['Intonation','12th-fret harmonic = fretted note','ref','Fretted note sharp: move the saddle back (away from the neck). Flat: move it forward.'],['Float','≈ 3.2 mm (1/8") gap at the back of the plate, or fully decked','ref','Adjust with the spring-claw screws in the back cavity.']]},
+ strings:{name:'Strings',group:'Hardware',what:'Six steel strings. Three wound (E, A, D) and three plain (G, B, E).',specs:[['Tuning','E standard, A = 440 Hz','ref'],['Gauge','09–42 or 10–46 are common on this style','ref','Check the packet of your current set.']],setup:[['Change','Every 1–3 months, or when they sound dull','ref']],tuning:true},
+ strap:{name:'Strap buttons',group:'Hardware',what:'One on the upper horn and one at the bottom of the body.',specs:[['Count','2','photo']],setup:[['Tip','Strap locks stop the guitar from falling','ref']]},
+ ctlplate:{name:'Control plate',group:'Electronics',what:'Clear Sixmart plate printed with the names of the electronic controls.',specs:[['Brand','SIXMART · Tagima','photo']],setup:[]},
+};
+const GROUPS=['Neck','Body','Pickups','Electronics','Hardware'];
+
+/* ---------- electronics state ---------- */
+const DEF={vol:10,pulled:false,mode:'clean',tone:10,delay:3,reverb:4,sel:1};
+let ST={...DEF};
+try{const s=JSON.parse(localStorage.getItem('sixmart.state')||'null'); if(s) ST={...DEF,...s};}catch(e){}
+function save(){try{localStorage.setItem('sixmart.state',JSON.stringify(ST));}catch(e){}}
+const ang=v=>-150+v*30;
+const SELNAME={1:'Bridge humbucker',2:'Bridge + middle',3:'Middle',4:'Middle + neck',5:'Neck'};
+const MODENAME={dist:'Distortion',clean:'Clean',over:'Overdrive'};
+function applyState(){
+ parts.vol.setAttribute('transform',`rotate(${ang(ST.vol)} ${VOL.x} ${VOL.y})`);
+ parts.volRing.setAttribute('opacity',ST.pulled?1:0);
+ parts.tone.setAttribute('transform',`rotate(${ang(ST.tone)} ${TONE.x} ${TONE.y})`);
+ parts.delay.setAttribute('transform',`rotate(${ang(ST.delay)} ${DR.x} ${DR.y})`);
+ parts.reverb.setAttribute('transform',`rotate(${ang(ST.reverb)} ${DR.x} ${DR.y})`);
+ const a=TOGANG[ST.mode]*Math.PI/180, tx=TOG.x+Math.sin(a)*7, ty=TOG.y-Math.cos(a)*7;
+ parts.togLever.setAttribute('x2',tx);parts.togLever.setAttribute('y2',ty);parts.togTip.setAttribute('cx',tx);parts.togTip.setAttribute('cy',ty);
+ const f=(5-ST.sel)/4; // 1=bridge end (bottom)
+ const px=SEL.x+SEL.dx*SEL.len*(.5-f)*.85, py=SEL.y+SEL.dy*SEL.len*(.5-f)*.85;
+ parts.selTip.setAttribute('transform',`translate(${px} ${py}) rotate(-20)`);
+ parts.ledGlow.setAttribute('opacity',ST.pulled?1:0); parts.ledCore.setAttribute('fill',ST.pulled?'#ff4a5c':'#f4f4f4');
+}
+function soundText(){
+ const pu=SELNAME[ST.sel];
+ if(!ST.pulled) return `<b>Effects off · plain guitar</b>${pu} · volume ${ST.vol} · tone ${ST.tone}`;
+ return `<b>Effects on · ${MODENAME[ST.mode]}</b>${pu} · volume ${ST.vol} · tone ${ST.tone}<br>Delay ${ST.delay} · reverb ${ST.reverb}`;
+}
+
+/* ---------- panel ---------- */
+const panel=document.getElementById('panel');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const tag=k=>k?`<span class="tag ${k}">${S[k]}</span>`:'';
+function rows(list){return `<table class="kv">${list.map(([k,v,src,n])=>`<tr><td>${esc(k)}</td><td>${esc(v)}${tag(src)}${n?`<span class="note">${esc(n)}</span>`:''}</td></tr>`).join('')}</table>`;}
+function slider(id,lab,val,max=10){return `<div class="ctl"><label for="${id}">${lab}<span id="${id}V">${val}</span></label><input type="range" id="${id}" min="0" max="${max}" step="0.5" value="${val}"></div>`;}
+function ctlHTML(kind){
+ if(kind==='selector') return `<div class="chips">${[1,2,3,4,5].map(n=>`<button class="chip ${ST.sel==n?'on':''}" data-sel="${n}">${n} · ${SELNAME[n]}</button>`).join('')}</div>`;
+ if(kind==='volume') return slider('cVol','Volume',ST.vol)+`<div class="chips"><button class="chip ${ST.pulled?'':'on'}" data-pull="0">Pushed · effects off</button><button class="chip ${ST.pulled?'on':''}" data-pull="1">Pulled · effects on</button></div>`;
+ if(kind==='mode') return `<div class="chips">${['dist','clean','over'].map(m=>`<button class="chip ${ST.mode==m?'on':''}" data-mode="${m}">${m.toUpperCase()}</button>`).join('')}</div>`;
+ if(kind==='tone') return slider('cTone','Tone',ST.tone);
+ if(kind==='dr') return slider('cDelay','Delay (lower ring)',ST.delay)+slider('cRev','Reverb (top cap)',ST.reverb);
+ return '';}
+function notesHTML(key){let v='';try{v=localStorage.getItem('sixmart.notes.'+key)||'';}catch(e){}
+ return `<h2>My notes</h2><textarea id="notes" data-key="${key}" placeholder="Your measurements, string brand, last setup date…">${esc(v)}</textarea>`;}
+function foot(){return `<div class="foot"><div class="legend">${tag('spec')} retailer spec sheet ${tag('photo')} seen on your photos ${tag('ref')} common Strat-style setup value ${tag('inferred')} worked out, not confirmed</div><p>Specs: <a href="${SPEC_URL}" target="_blank" rel="noopener">AVL Gear listing</a>. Setup values are general references for a 25.5", 9.5"-radius guitar, not Tagima factory numbers. Measure your own guitar.</p></div>`;}
+
+function renderOverview(){
+ const byG=GROUPS.map(g=>`<div class="group-label">${g}</div><div class="chips">${Object.entries(PARTS).filter(([,p])=>p.group===g).map(([k,p])=>`<button class="chip" data-go="${k}">${esc(p.name)}</button>`).join('')}</div>`).join('');
+ panel.innerHTML=`<h1>Tagima Sixmart</h1><p class="sub">HSS Strat style with built-in effects · Sparkling Candy Apple</p>
+ <h2>Current sound</h2><div class="sound" id="sound">${soundText()}</div>
+ <h2>Parts</h2>${byG}
+ <h2>Specs</h2>${rows([['Body','Basswood','spec'],['Neck','Maple, C shape','spec'],['Fretboard','Techwood, 22 frets, 9.5" radius','spec'],['Scale','25.5" (648 mm)','spec'],['Nut','43 mm','spec'],['Pickups','Humbucker + 2 single coils (HSS)','spec'],['Bridge','Tremolo','spec'],['Tuners','Diecast','spec'],['Effects','Overdrive, distortion, delay, reverb','spec'],['Outputs','6.35 mm, headphones, rec out / audio in','photo']])}
+ <h2>Quick setup reference</h2>${rows([['Tuning','E standard, A = 440 Hz','ref'],['Neck relief','0.25 mm at fret 8','ref'],['Action (fret 12)','1.6 mm treble / 1.8–2.0 mm bass','ref'],['Pickup height','SC 2.4 / 2.0 mm · HB 1.6 mm','ref']])}${foot()}`;}
+function renderPart(key){
+ const p=PARTS[key];
+ panel.innerHTML=`<button class="back" data-home>← Whole guitar</button><h1>${esc(p.name)}</h1><p class="sub">${p.group}</p><p class="what">${esc(p.what)}</p>
+ ${p.ctl?`<h2>Setting</h2>${ctlHTML(p.ctl)}<div class="sound" id="sound">${soundText()}</div>`:''}
+ ${p.specs.length?`<h2>Specs</h2>${rows(p.specs)}`:''}
+ ${p.setup.length?`<h2>Setup</h2>${rows(p.setup)}`:''}
+ ${p.tuning?`<h2>Standard tuning</h2>${rows(TUNING.map(([a,b])=>[a,b,'ref']))}`:''}
+ ${notesHTML(key)}${foot()}`;}
+panel.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.go){select(b.dataset.go);return;}
+ if('home' in b.dataset){home();return;}
+ if(b.dataset.sel){ST.sel=+b.dataset.sel;}
+ else if(b.dataset.pull){ST.pulled=b.dataset.pull==='1';}
+ else if(b.dataset.mode){ST.mode=b.dataset.mode;}
+ else return;
+ save();applyState();renderPart(current);});
+panel.addEventListener('input',e=>{const t=e.target;
+ if(t.id==='notes'){try{localStorage.setItem('sixmart.notes.'+t.dataset.key,t.value);}catch(err){}return;}
+ const map={cVol:'vol',cTone:'tone',cDelay:'delay',cRev:'reverb'}; if(!map[t.id])return;
+ ST[map[t.id]]=+t.value; document.getElementById(t.id+'V').textContent=t.value; save(); applyState();
+ const s=document.getElementById('sound'); if(s) s.innerHTML=soundText();});
+
+/* ---------- pan / zoom ---------- */
+const svg=document.getElementById('guitar'), stage=document.getElementById('stage');
+let vb={x:0,y:0,w:600,h:1300}, anim=null, current=null;
+const full=()=>world.getBBox();
+function setVB(v){vb=v;svg.setAttribute('viewBox',`${v.x} ${v.y} ${v.w} ${v.h}`);
+ const f=full(); document.getElementById('zlvl').textContent=Math.round(Math.max(f.height/v.h,f.width/v.w)*100)+'%';
+ document.querySelectorAll('.fretnum').forEach(t=>t.setAttribute('fill-opacity',v.w<140?.55:0));}
+function aspect(){const r=stage.getBoundingClientRect();return r.width/Math.max(1,r.height);}
+function boxView(b,pad){let w=b.width+pad*2,h=b.height+pad*2;const a=aspect();if(w/h<a)w=h*a;else h=w/a;return{x:b.x+b.width/2-w/2,y:b.y+b.height/2-h/2,w,h};}
+function animateTo(t,ms=520){cancelAnimationFrame(anim);const s={...vb},t0=performance.now();
+ const step=now=>{let k=Math.min(1,(now-t0)/ms);k=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+  setVB({x:s.x+(t.x-s.x)*k,y:s.y+(t.y-s.y)*k,w:s.w+(t.w-s.w)*k,h:s.h+(t.h-s.h)*k});if(k<1)anim=requestAnimationFrame(step);};anim=requestAnimationFrame(step);}
+function toSvg(cx,cy){const r=svg.getBoundingClientRect();return{x:vb.x+(cx-r.left)/r.width*vb.w,y:vb.y+(cy-r.top)/r.height*vb.h};}
+function zoomAt(px,py,f){const w=Math.min(4000,Math.max(12,vb.w*f));f=w/vb.w;setVB({x:px-(px-vb.x)*f,y:py-(py-vb.y)*f,w,h:vb.h*f});}
+svg.addEventListener('wheel',e=>{e.preventDefault();cancelAnimationFrame(anim);const p=toSvg(e.clientX,e.clientY);zoomAt(p.x,p.y,Math.exp(e.deltaY*(e.ctrlKey?.01:.0018)));},{passive:false});
+const ptrs=new Map();let moved=0,pinch=null;
+svg.addEventListener('pointerdown',e=>{svg.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=0;cancelAnimationFrame(anim);
+ if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)};}svg.classList.add('dragging');});
+svg.addEventListener('pointermove',e=>{
+ if(!ptrs.has(e.pointerId)){hover(e);return;}
+ const prev=ptrs.get(e.pointerId);const r=svg.getBoundingClientRect();
+ ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(ptrs.size===2&&pinch){const [a,b]=[...ptrs.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);const m=toSvg((a.x+b.x)/2,(a.y+b.y)/2);zoomAt(m.x,m.y,pinch.d/d);pinch.d=d;moved+=10;return;}
+ const dx=e.clientX-prev.x,dy=e.clientY-prev.y;moved+=Math.abs(dx)+Math.abs(dy);
+ setVB({...vb,x:vb.x-dx/r.width*vb.w,y:vb.y-dy/r.height*vb.h});});
+function up(e){const wasTap=ptrs.size===1&&moved<5;ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size)svg.classList.remove('dragging');
+ if(wasTap&&e.type==='pointerup'){const hit=document.elementFromPoint(e.clientX,e.clientY);const p=hit&&hit.closest&&hit.closest('.part');if(p)select(p.dataset.part);}}
+svg.addEventListener('pointerup',up);svg.addEventListener('pointercancel',up);
+svg.addEventListener('dblclick',e=>{const p=toSvg(e.clientX,e.clientY);cancelAnimationFrame(anim);zoomAt(p.x,p.y,.5);});
+const tip=document.getElementById('tip'), hb=document.getElementById('hoverBox');
+function box(rect,b){const pad=2;rect.setAttribute('x',b.x-pad);rect.setAttribute('y',b.y-pad);rect.setAttribute('width',b.width+pad*2);rect.setAttribute('height',b.height+pad*2);rect.setAttribute('visibility','visible');}
+function hover(e){const p=e.target.closest&&e.target.closest('.part');
+ if(!p||p.dataset.part==='body'&&false){tip.style.opacity=0;hb.setAttribute('visibility','hidden');return;}
+ tip.textContent=PARTS[p.dataset.part].name;tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY+12)+'px';tip.style.opacity=1;
+ if(p.dataset.part!=='body'&&p.dataset.part!==current) box(hb,p.getBBox()); else hb.setAttribute('visibility','hidden');}
+svg.addEventListener('pointerleave',()=>{tip.style.opacity=0;hb.setAttribute('visibility','hidden');});
+
+function select(key,instant){current=key;const g=world.querySelector(`[data-part="${key}"]`);const b=g.getBBox();
+ const sb=document.getElementById('selBox');box(sb,b);hb.setAttribute('visibility','hidden');
+ const min=Math.max(b.width,b.height)<40?18:Math.max(b.width,b.height)*.25;
+ (instant?setVB:animateTo)(boxView(b,min));renderPart(key);try{history.replaceState(null,'','#'+key);}catch(e){}document.getElementById('crumbTitle').textContent=PARTS[key].name;}
+function home(){current=null;try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}document.getElementById('selBox').setAttribute('visibility','hidden');animateTo(boxView(full(),20));renderOverview();document.getElementById('crumbTitle').textContent='Tagima Sixmart';}
+document.getElementById('home').onclick=home;
+document.getElementById('fit').onclick=()=>animateTo(boxView(full(),20));
+document.getElementById('zin').onclick=()=>{const c={x:vb.x+vb.w/2,y:vb.y+vb.h/2};const t={...vb};const f=.6;animateTo({x:c.x-(c.x-t.x)*f,y:c.y-(c.y-t.y)*f,w:t.w*f,h:t.h*f},260);};
+document.getElementById('zout').onclick=()=>{const c={x:vb.x+vb.w/2,y:vb.y+vb.h/2};const f=1/.6;animateTo({x:c.x-(c.x-vb.x)*f,y:c.y-(c.y-vb.y)*f,w:vb.w*f,h:vb.h*f},260);};
+addEventListener('keydown',e=>{if(e.key==='Escape')home();if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;if(e.key==='+'||e.key==='=')document.getElementById('zin').click();if(e.key==='-')document.getElementById('zout').click();});
+new ResizeObserver(()=>{const c={x:vb.x+vb.w/2,y:vb.y+vb.h/2};const a=aspect();let w=vb.w,h=vb.h;if(w/h<a)w=h*a;else h=w/a;
+ // keep the zoom level: base on the dimension that was fitting
+ setVB({x:c.x-w/2,y:c.y-h/2,w,h});}).observe(stage);
+
+applyState();setVB(boxView(full(),20));renderOverview();
+{const h=location.hash.slice(1);if(PARTS[h])select(h,true);}
+addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(PARTS[h]&&h!==current)select(h);});
+</script>
+</body>
+</html>
